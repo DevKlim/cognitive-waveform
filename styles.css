@@ -1,0 +1,284 @@
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #121212;
+    color: #fff;
+    line-height: 1.5;
+}
+
+/* Layout */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Sidebar styles (like Spotify's left panel) */
+.sidebar {
+    width: 240px;
+    background-color: #181818;
+    padding: 20px;
+    border-radius: 8px;
+    margin-right: 20px;
+}
+
+.app-logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1db954;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.collection-header {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0 0 15px 0;
+    color: #fff;
+}
+
+.collection-list {
+    list-style: none;
+    margin-bottom: 30px;
+}
+
+.collection-item {
+    padding: 10px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: 500;
+}
+
+.collection-item:hover {
+    background-color: #282828;
+}
+
+.collection-item.active {
+    background-color: #1db954;
+    color: #000;
+}
+
+/* Main content area */
+.main-content {
+    flex: 1;
+    background-color: #181818;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.header-info {
+    margin-bottom: 30px;
+}
+
+.current-selection {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #b3b3b3;
+    font-size: 14px;
+}
+
+/* Visualization area */
+.visualization-container {
+    margin-bottom: 30px;
+}
+
+.chart-container {
+    height: 250px;
+    width: 100%;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+/* Waveform visualization */
+.waveform-container {
+    position: relative;
+    width: 100%;
+    height: 120px;
+    background-color: #121212;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.waveform-center-line {
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    background-color: #333;
+    top: 50%;
+}
+
+.waveform-bars {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0 10px;
+}
+
+.waveform-bar {
+    width: 4px;
+    background-color: #1db954;
+    margin: 0 3px;
+    border-radius: 2px;
+    transform-origin: center;
+}
+
+.heart-rate-display {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* Player controls */
+.player-controls {
+    width: 100%;
+}
+
+.timeline {
+    width: 100%;
+    height: 4px;
+    background-color: #535353;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.timeline-progress {
+    height: 100%;
+    background-color: #1db954;
+    border-radius: 2px;
+    width: 0;
+}
+
+.time-display {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #b3b3b3;
+    margin-bottom: 20px;
+}
+
+.control-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.control-btn:hover {
+    color: #fff;
+}
+
+.play-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #1db954;
+    color: #000;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.play-btn:hover {
+    transform: scale(1.05);
+    background-color: #1ed760;
+}
+
+/* D3 Chart styling */
+.axis path,
+.axis line {
+    stroke: #666;
+}
+
+.axis text {
+    fill: #b3b3b3;
+    font-size: 12px;
+}
+
+.heart-rate-line {
+    fill: none;
+    stroke: #1db954;
+    stroke-width: 2px;
+}
+
+.current-time-line {
+    stroke: #ff6b6b;
+    stroke-width: 2px;
+    stroke-dasharray: 4, 4;
+}
+
+.chart-tooltip {
+    position: absolute;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 12px;
+    transition: opacity 0.3s;
+}
+
+.chart-overlay {
+    fill: none;
+    pointer-events: all;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Loading indicator */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    color: #1db954;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+}

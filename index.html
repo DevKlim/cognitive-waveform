@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Heart Rate Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar (like Spotify's left panel) -->
+        <div class="sidebar">
+            <div class="app-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4L10.5 9.5L5 11L10.5 12.5L12 18L13.5 12.5L19 11L13.5 9.5L12 4Z" fill="#1db954"/>
+                </svg>
+                ExamBeats
+            </div>
+            
+            <h2 class="collection-header">Students</h2>
+            <ul id="student-list" class="collection-list">
+                <li class="collection-item active" data-student="S1">Student 1</li>
+                <li class="collection-item" data-student="S2">Student 2</li>
+                <li class="collection-item" data-student="S3">Student 3</li>
+            </ul>
+            
+            <h2 class="collection-header">Exams</h2>
+            <ul id="exam-list" class="collection-list">
+                <li class="collection-item active" data-exam="Midterm 1">Midterm 1</li>
+                <li class="collection-item" data-exam="Midterm 2">Midterm 2</li>
+                <li class="collection-item" data-exam="Final Exam">Final Exam</li>
+            </ul>
+            
+            <div id="loading-indicator" class="loading hidden">
+                Loading data...
+            </div>
+        </div>
+        
+        <!-- Main content area -->
+        <div class="main-content">
+            <div class="header-info">
+                <h1 id="current-exam" class="current-selection">Midterm 1</h1>
+                <div id="current-student" class="subtitle">Student 1</div>
+            </div>
+            
+            <div class="visualization-container">
+                <!-- Line chart -->
+                <div id="chart-container" class="chart-container"></div>
+                
+                <!-- Waveform visualization -->
+                <div id="waveform-container" class="waveform-container">
+                    <div class="waveform-center-line"></div>
+                    <div id="waveform-bars" class="waveform-bars"></div>
+                    <div id="heart-rate-display" class="heart-rate-display">Heart Rate: 0 BPM</div>
+                </div>
+                
+                <!-- Player controls -->
+                <div class="player-controls">
+                    <div id="timeline" class="timeline">
+                        <div id="timeline-progress" class="timeline-progress"></div>
+                    </div>
+                    
+                    <div class="time-display">
+                        <span id="current-time">0:00</span>
+                        <span id="total-time">0:00</span>
+                    </div>
+                    
+                    <div class="control-buttons">
+                        <button id="skip-back-btn" class="control-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 20L9 12L19 4V20Z" fill="currentColor"/>
+                                <path d="M5 4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                        
+                        <button id="play-btn" class="play-btn">
+                            <svg id="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
+                            </svg>
+                            
+                            <svg id="pause-icon" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 4H6V20H10V4Z" fill="currentColor"/>
+                                <path d="M18 4H14V20H18V4Z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                        
+                        <button id="skip-forward-btn" class="control-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 4L15 12L5 20V4Z" fill="currentColor"/>
+                                <path d="M19 4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="chart-tooltip" class="chart-tooltip hidden"></div>
+    
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="global.js"></script>
+</body>
+</html>
