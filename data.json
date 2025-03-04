@@ -1,0 +1,19 @@
+{
+    "files": [
+      {
+        "name": "driving_clean_data.csv",
+        "path": "data/driving_clean_data.csv",
+        "displayName": "Driving Clean Data"
+      },
+      {
+        "name": "exam_dataset.csv",
+        "path": "data/exam_dataset.csv",
+        "displayName": "Exam Dataset"
+      },
+      {
+        "name": "exam_dataset_10s.csv",
+        "path": "data/exam_dataset_10s.csv",
+        "displayName": "Exam Dataset (10s)"
+      }
+    ]
+  }

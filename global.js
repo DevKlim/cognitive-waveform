@@ -31,59 +31,133 @@ const sampleData = [
 ];
 
 /**
- * Attempt to scan the `data/` folder for CSV files by fetching its listing (or an `index.html`).
- * This will only work if your server actually returns a directory listing or has a `data/index.html` with <a> links.
+ * Use data.json to find CSV files with GitHub Pages compatibility
  */
 async function scanDataDirectory() {
     try {
         // Show loading indicator
         document.getElementById('loading-indicator').classList.remove('hidden');
         
-        // Fetch the directory listing at "data/"
-        // or "data/index.html" if that's how your server is set up
-        const baseUrl = window.location.hostname.includes('github.io') 
-            ? '/cognitive-waveform/' 
-            : '/';
-        const response = await fetch(`${baseUrl}data/`);
-        const html = await response.text();
-        
-        // Parse the returned HTML
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // Extract all <a> elements
-        const links = Array.from(doc.querySelectorAll('a'));
-        
-        // Filter to find only .csv links
-        const csvFiles = links
-            .filter(link => link.href.endsWith('.csv'))
-            .map(link => {
-                // Because link.href could be absolute or relative, parse it
-                const url = new URL(link.href, window.location.origin);
-                const filename = url.pathname.split('/').pop(); // get the last part
+        // First try the data.json approach
+        try {
+            // Get the base URL for the repository
+            const repoUrl = new URL('.', window.location.href).href;
+            console.log('Repository base URL:', repoUrl);
+            
+            const response = await fetch(new URL('data.json', repoUrl).href);
+            if (response.ok) {
+                const data = await response.json();
                 
-                return {
-                    name: filename,
-                    path: `data/${filename}` // relative path to the CSV in data/
-                };
-            });
+                if (data.files && data.files.length > 0) {
+                    console.log('Found files in data.json:', data.files);
+                    
+                    // Map the files to our expected format
+                    const csvFiles = data.files.map(file => ({
+                        name: file.displayName || file.name.replace('.csv', '').replace(/_/g, ' '),
+                        path: new URL(file.path, repoUrl).href
+                    }));
+                    
+                    app.data.files = csvFiles;
+                    updateFileList(csvFiles);
+                    
+                    // Load the first file
+                    if (csvFiles.length > 0) {
+                        loadCSVFile(csvFiles[0].path);
+                        document.getElementById('loading-indicator').classList.add('hidden');
+                        return;
+                    }
+                }
+            } else {
+                console.warn('data.json not found or invalid, trying fallback methods');
+            }
+        } catch (error) {
+            console.warn('Error with data.json approach:', error);
+        }
         
-        // Store these files in the app state
-        app.data.files = csvFiles;
+        // Try traditional directory listing (works locally but not on GitHub Pages)
+        try {
+            const repoUrl = new URL('.', window.location.href).href;
+            const response = await fetch(new URL('data/', repoUrl).href);
+            const html = await response.text();
+            
+            // Parse the returned HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extract all <a> elements
+            const links = Array.from(doc.querySelectorAll('a'));
+            
+            // Filter to find only .csv links
+            const csvFiles = links
+                .filter(link => link.href.endsWith('.csv'))
+                .map(link => {
+                    // Because link.href could be absolute or relative, parse it
+                    const url = new URL(link.href, window.location.origin);
+                    const filename = url.pathname.split('/').pop(); // get the last part
+                    
+                    return {
+                        name: filename.replace('.csv', '').replace(/_/g, ' '),
+                        path: link.href
+                    };
+                });
+            
+            // Store these files in the app state
+            if (csvFiles.length > 0) {
+                app.data.files = csvFiles;
+                updateFileList(csvFiles);
+                loadCSVFile(csvFiles[0].path);
+                document.getElementById('loading-indicator').classList.add('hidden');
+                return;
+            }
+        } catch (error) {
+            console.warn('Directory listing failed:', error);
+        }
         
-        // Update the file list in the UI
-        updateFileList(csvFiles);
+        // Try hardcoded known files based on your datasets
+        try {
+            const repoUrl = new URL('.', window.location.href).href;
+            const knownFiles = [
+                'driving_clean_data.csv',
+                'exam_dataset.csv',
+                'exam_dataset_10s.csv'
+            ];
+            
+            const csvFiles = [];
+            for (const filename of knownFiles) {
+                try {
+                    // Just check if the file exists
+                    const fileUrl = new URL(`data/${filename}`, repoUrl).href;
+                    const response = await fetch(fileUrl, { method: 'HEAD' });
+                    
+                    if (response.ok) {
+                        const displayName = filename.replace('.csv', '').replace(/_/g, ' ');
+                        csvFiles.push({
+                            name: displayName,
+                            path: fileUrl
+                        });
+                        console.log(`Found file: ${filename}`);
+                    }
+                } catch (err) {
+                    console.warn(`File ${filename} test failed:`, err);
+                }
+            }
+            
+            if (csvFiles.length > 0) {
+                app.data.files = csvFiles;
+                updateFileList(csvFiles);
+                loadCSVFile(csvFiles[0].path);
+                document.getElementById('loading-indicator').classList.add('hidden');
+                return;
+            }
+        } catch (error) {
+            console.warn('Error with hardcoded files approach:', error);
+        }
         
-        // Hide loading indicator
+        // If all else fails, use sample data
+        console.warn('No CSV files found. Using sample data instead.');
+        useSampleData();
         document.getElementById('loading-indicator').classList.add('hidden');
         
-        // If we found any CSV files, load the first one
-        if (csvFiles.length > 0) {
-            loadCSVFile(csvFiles[0].path);
-        } else {
-            console.warn('No CSV files found in the data/ folder. Using sample data instead.');
-            useSampleData();
-        }
     } catch (error) {
         console.error('Error scanning data directory:', error);
         document.getElementById('loading-indicator').classList.add('hidden');
@@ -103,9 +177,8 @@ function updateFileList(files) {
         li.className = 'collection-item' + (index === 0 ? ' active' : '');
         li.setAttribute('data-file', file.path);
 
-        // Create a more readable name (remove .csv extension, underscores, etc.)
-        const displayName = file.name.replace('.csv', '').replace(/_/g, ' ');
-        li.textContent = displayName;
+        // Display name is already formatted in our file objects
+        li.textContent = file.name;
 
         fileList.appendChild(li);
 
@@ -133,12 +206,22 @@ function loadCSVFile(filePath) {
     app.currentFile = filePath;
 
     // Update heading to show the name of the CSV
-    const fileDisplayName = filePath.split('/').pop().replace('.csv', '').replace(/_/g, ' ');
+    const filename = new URL(filePath).pathname.split('/').pop();
+    const fileDisplayName = filename.replace('.csv', '').replace(/_/g, ' ');
     document.getElementById('current-exam').textContent = fileDisplayName;
+
+    console.log('Loading CSV from:', filePath);
 
     // Use d3 to fetch & parse CSV
     d3.csv(filePath)
         .then(data => {
+            // Check if we got valid data
+            if (!data || data.length === 0 || !Object.keys(data[0]).length) {
+                throw new Error('CSV file is empty or invalid');
+            }
+            
+            console.log('CSV loaded successfully with headers:', Object.keys(data[0]));
+            
             // Determine data format by checking column headers
             const headers = Object.keys(data[0]);
 
@@ -291,7 +374,7 @@ function useSampleData() {
     app.data.all = generateSampleData(); // generate bigger sample set
     app.currentDataType = 'exam';
 
-    // Fake “Students” and “Exams”
+    // Fake "Students" and "Exams"
     const students = ['S1', 'S2', 'S3'];
     const exams = ['Midterm 1', 'Midterm 2', 'Final Exam'];
 
@@ -702,7 +785,6 @@ function togglePlayback() {
     }
 }
 
-// Stop playback
 function stopPlayback() {
     clearInterval(app.playbackInterval);
     app.isPlaying = false;
@@ -777,8 +859,53 @@ function debounce(func, wait) {
 function addFavicon() {
     const link = document.createElement('link');
     link.rel = 'icon';
-    link.href = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" ...>...</svg>';
+    link.href = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">📊</text></svg>';
     document.head.appendChild(link);
+}
+
+// Fix SVG Paths function - run this to fix any potential SVG path errors 
+function fixSVGPaths() {
+    // Replace any problematic SVG icons with valid ones
+    
+    // Play icon - ensure it has a valid path
+    const playIcon = document.getElementById('play-icon');
+    if (playIcon) {
+        playIcon.setAttribute('viewBox', '0 0 24 24');
+        const playPath = playIcon.querySelector('path');
+        if (playPath) {
+            playPath.setAttribute('d', 'M8 5v14l11-7z');
+        }
+    }
+    
+    // Pause icon - ensure it has a valid path
+    const pauseIcon = document.getElementById('pause-icon');
+    if (pauseIcon) {
+        pauseIcon.setAttribute('viewBox', '0 0 24 24');
+        const pausePath = pauseIcon.querySelector('path');
+        if (pausePath) {
+            pausePath.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+        }
+    }
+    
+    // Skip back icon
+    const skipBackIcon = document.getElementById('skip-back-icon');
+    if (skipBackIcon) {
+        skipBackIcon.setAttribute('viewBox', '0 0 24 24');
+        const skipBackPath = skipBackIcon.querySelector('path');
+        if (skipBackPath) {
+            skipBackPath.setAttribute('d', 'M6 6h2v12H6zm3.5 6l8.5 6V6z');
+        }
+    }
+    
+    // Skip forward icon
+    const skipForwardIcon = document.getElementById('skip-forward-icon');
+    if (skipForwardIcon) {
+        skipForwardIcon.setAttribute('viewBox', '0 0 24 24');
+        const skipForwardPath = skipForwardIcon.querySelector('path');
+        if (skipForwardPath) {
+            skipForwardPath.setAttribute('d', 'M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z');
+        }
+    }
 }
 
 // ---------------------------------------------------------
@@ -787,7 +914,8 @@ function addFavicon() {
 document.addEventListener('DOMContentLoaded', () => {
     addFavicon();
     setupEventListeners();
+    fixSVGPaths(); // Fix any SVG path issues
     
-    // Attempt to scan the data/ directory for CSV files
+    // Attempt to scan the data directory for CSV files (now using data.json)
     scanDataDirectory();
 });
