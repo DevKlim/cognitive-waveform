@@ -9,7 +9,7 @@ const app = {
     data: {
         all: [],
         filtered: [],
-        files: [] // Array to store available CSV files (scanned from cognitive-waveform/data/ folder)
+        files: [] // Array to store available CSV files (scanned from /cognitive-waveform/data/ folder)
     },
     chart: {
         svg: null,
@@ -31,17 +31,17 @@ const sampleData = [
 ];
 
 /**
- * Attempt to scan the `cognitive-waveform/data/` folder for CSV files by fetching its listing (or an `index.html`).
- * This will only work if your server actually returns a directory listing or has a `cognitive-waveform/data/index.html` with <a> links.
+ * Attempt to scan the `/cognitive-waveform/data/` folder for CSV files by fetching its listing (or an `index.html`).
+ * This will only work if your server actually returns a directory listing or has a `/cognitive-waveform/data/index.html` with <a> links.
  */
 async function scanDataDirectory() {
     try {
         // Show loading indicator
         document.getElementById('loading-indicator').classList.remove('hidden');
         
-        // Fetch the directory listing at "cognitive-waveform/data/"
-        // or "cognitive-waveform/data/index.html" if that's how your server is set up
-        const response = await fetch('cognitive-waveform/data/');
+        // Fetch the directory listing at "/cognitive-waveform/data/"
+        // or "/cognitive-waveform/data/index.html" if that's how your server is set up
+        const response = await fetch('/cognitive-waveform/data/');
         const html = await response.text();
         
         // Parse the returned HTML
@@ -61,7 +61,7 @@ async function scanDataDirectory() {
                 
                 return {
                     name: filename,
-                    path: `cognitive-waveform/data/${filename}` // relative path to the CSV in cognitive-waveform/data/
+                    path: `/cognitive-waveform/data/${filename}` // relative path to the CSV in /cognitive-waveform/data/
                 };
             });
         
@@ -78,7 +78,7 @@ async function scanDataDirectory() {
         if (csvFiles.length > 0) {
             loadCSVFile(csvFiles[0].path);
         } else {
-            console.warn('No CSV files found in the cognitive-waveform/data/ folder. Using sample data instead.');
+            console.warn('No CSV files found in the /cognitive-waveform/data/ folder. Using sample data instead.');
             useSampleData();
         }
     } catch (error) {
@@ -785,6 +785,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addFavicon();
     setupEventListeners();
     
-    // Attempt to scan the cognitive-waveform/data/ directory for CSV files
+    // Attempt to scan the /cognitive-waveform/data/ directory for CSV files
     scanDataDirectory();
 });
