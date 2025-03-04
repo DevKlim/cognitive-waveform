@@ -1055,8 +1055,8 @@ function setupVolumeControl() {
 // Basic event listeners
 function setupEventListeners() {
     document.getElementById('play-btn').addEventListener('click', togglePlayback);
-    document.getElementById('skip-forward-btn').addEventListener('click', () => skipTime(30));
-    document.getElementById('skip-back-btn').addEventListener('click', () => skipTime(-30));
+    document.getElementById('skip-forward-btn').addEventListener('click', () => skipTime(120));
+    document.getElementById('skip-back-btn').addEventListener('click', () => skipTime(-120));
     
     // Timeline click
     document.getElementById('timeline').addEventListener('click', function(e) {
