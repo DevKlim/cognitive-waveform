@@ -9,7 +9,7 @@ const app = {
     data: {
         all: [],
         filtered: [],
-        files: [] // Array to store available CSV files
+        files: [] // Array to store available CSV files (scanned from data/ folder)
     },
     chart: {
         svg: null,
@@ -27,74 +27,58 @@ const sampleData = [
     {"timestamp":0,"student":"S1","exam":"Midterm 1","hr":84,"temp":22.51},
     {"timestamp":10,"student":"S1","exam":"Midterm 1","hr":101.09,"temp":22.49},
     {"timestamp":20,"student":"S1","exam":"Midterm 1","hr":102.33,"temp":22.51},
-    /* ... other sample data points ... */
+    // ... add more sample data points if you want ...
 ];
 
-// Function to scan and list all CSV files in the data directory
+/**
+ * Attempt to scan the `data/` folder for CSV files by fetching its listing (or an `index.html`).
+ * This will only work if your server actually returns a directory listing or has a `data/index.html` with <a> links.
+ */
 async function scanDataDirectory() {
     try {
         // Show loading indicator
         document.getElementById('loading-indicator').classList.remove('hidden');
         
-        // Add a files section to the sidebar
-        const sidebar = document.querySelector('.sidebar');
-        
-        // Create a files section if it doesn't exist
-        if (!document.getElementById('file-list-container')) {
-            const filesSection = document.createElement('div');
-            filesSection.id = 'file-list-container';
-            
-            const filesHeader = document.createElement('h2');
-            filesHeader.className = 'collection-header';
-            filesHeader.textContent = 'Recordings';
-            
-            const filesList = document.createElement('ul');
-            filesList.id = 'file-list';
-            filesList.className = 'collection-list';
-            
-            filesSection.appendChild(filesHeader);
-            filesSection.appendChild(filesList);
-            sidebar.appendChild(filesSection);
-        }
-        
-        // Fetch list of CSV files with updated path
-        const response = await fetch('/cognitive-waveform/data/');
+        // Fetch the directory listing at "data/"
+        // or "data/index.html" if that's how your server is set up
+        const response = await fetch('data/');
         const html = await response.text();
         
-        // Create a temporary element to parse the HTML
+        // Parse the returned HTML
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
-        // Extract links to CSV files
+        // Extract all <a> elements
         const links = Array.from(doc.querySelectorAll('a'));
+        
+        // Filter to find only .csv links
         const csvFiles = links
             .filter(link => link.href.endsWith('.csv'))
             .map(link => {
-                // Extract just the filename
-                const url = new URL(link.href);
-                const path = url.pathname;
-                const filename = path.split('/').pop();
+                // Because link.href could be absolute or relative, parse it
+                const url = new URL(link.href, window.location.origin);
+                const filename = url.pathname.split('/').pop(); // get the last part
+                
                 return {
                     name: filename,
-                    // Updated path to include the proper root directory
-                    path: `/cognitive-waveform/data/${filename}`
+                    path: `data/${filename}` // relative path to the CSV in data/
                 };
             });
         
-        // Store the files in the app state
+        // Store these files in the app state
         app.data.files = csvFiles;
         
-        // Update the UI with the available files
+        // Update the file list in the UI
         updateFileList(csvFiles);
         
         // Hide loading indicator
         document.getElementById('loading-indicator').classList.add('hidden');
         
-        // If files were found, load the first one
+        // If we found any CSV files, load the first one
         if (csvFiles.length > 0) {
             loadCSVFile(csvFiles[0].path);
         } else {
-            console.warn('No CSV files found in the data directory. Using sample data.');
+            console.warn('No CSV files found in the data/ folder. Using sample data instead.');
             useSampleData();
         }
     } catch (error) {
@@ -107,6 +91,7 @@ async function scanDataDirectory() {
 
 // Update the file list in the UI
 function updateFileList(files) {
+    // In your HTML, you need a <ul> or <div> with id="file-list"
     const fileList = document.getElementById('file-list');
     fileList.innerHTML = '';
     
@@ -114,16 +99,16 @@ function updateFileList(files) {
         const li = document.createElement('li');
         li.className = 'collection-item' + (index === 0 ? ' active' : '');
         li.setAttribute('data-file', file.path);
-        
-        // Create a more readable name (remove .csv extension)
+
+        // Create a more readable name (remove .csv extension, underscores, etc.)
         const displayName = file.name.replace('.csv', '').replace(/_/g, ' ');
         li.textContent = displayName;
-        
+
         fileList.appendChild(li);
-        
-        // Add click event listener
+
+        // Add click event listener to load that file
         li.addEventListener('click', function() {
-            // Update active state
+            // Update active state in UI
             document.querySelectorAll('#file-list .collection-item').forEach(el => {
                 el.classList.remove('active');
             });
@@ -136,37 +121,36 @@ function updateFileList(files) {
     });
 }
 
-// Load specific CSV file
+// Load a specific CSV file using d3.csv()
 function loadCSVFile(filePath) {
     // Show loading indicator
     document.getElementById('loading-indicator').classList.remove('hidden');
-    
-    // Remember current file
+
+    // Remember current file path
     app.currentFile = filePath;
-    
-    // Update header to show current file
+
+    // Update heading to show the name of the CSV
     const fileDisplayName = filePath.split('/').pop().replace('.csv', '').replace(/_/g, ' ');
     document.getElementById('current-exam').textContent = fileDisplayName;
-    
+
+    // Use d3 to fetch & parse CSV
     d3.csv(filePath)
         .then(data => {
-            // Check the CSV format by looking at headers
+            // Determine data format by checking column headers
             const headers = Object.keys(data[0]);
-            
-            // Determine data type based on headers
+
             if (headers.includes('exam') && headers.includes('student')) {
-                // Exam data format
+                // exam data format
                 processExamData(data, fileDisplayName);
                 app.currentDataType = 'exam';
             } else if (headers.includes('HR') && headers.includes('subject')) {
-                // Driving data format
+                // driving data format
                 processDrivingData(data, fileDisplayName);
                 app.currentDataType = 'driving';
             } else {
-                // Unknown format
-                throw new Error('Unknown CSV format. Expected exam or driving data.');
+                throw new Error('Unknown CSV format. Expected exam or driving data columns.');
             }
-            
+
             // Hide loading indicator
             document.getElementById('loading-indicator').classList.add('hidden');
         })
@@ -178,9 +162,11 @@ function loadCSVFile(filePath) {
         });
 }
 
-// Process exam data format
+// -------------------
+// Exam data handling
+// -------------------
 function processExamData(data, fileDisplayName) {
-    // Parse the CSV data
+    // Convert strings to numbers where appropriate
     const parsedData = data.map(d => ({
         timestamp: +d.timestamp,
         student: d.student,
@@ -189,170 +175,166 @@ function processExamData(data, fileDisplayName) {
         temp: +d.temp
     }));
     
-    // Update app data
+    // Save to global state
     app.data.all = parsedData;
-    
-    // Get unique students and exams
+
+    // Get unique students & exams
     const students = [...new Set(parsedData.map(d => d.student))];
     const exams = [...new Set(parsedData.map(d => d.exam))];
-    
-    // Update UI headings
+
+    // Update UI headings for "Students" and "Exams"
     document.querySelector('#student-list').previousElementSibling.textContent = 'Students';
     document.querySelector('#exam-list').previousElementSibling.textContent = 'Exams';
-    
-    // Update student list
+
+    // Populate students in the sidebar
     updateListItems('student-list', students, 'data-student');
-    
-    // Update exam list
+
+    // Populate exams in the sidebar
     updateListItems('exam-list', exams, 'data-exam');
-    
-    // Reset to first student and exam
+
+    // Default selection
     if (students.length > 0) {
         app.currentStudent = students[0];
         document.getElementById('current-student').textContent = students[0];
     }
-    
     if (exams.length > 0) {
         app.currentExam = exams[0];
     }
-    
-    // Reset playback and update visuals
+
+    // Reset time, charts, waveforms
     resetPlayback();
 }
 
-// Process driving data format
+// ----------------------
+// Driving data handling
+// ----------------------
 function processDrivingData(data, fileDisplayName) {
-    // Parse the CSV data - in driving data, HR is the heart rate column
     const parsedData = data.map(d => ({
         timestamp: +d.timestamp,
-        student: d.subject,  // 'subject' in driving data corresponds to 'student'
-        exam: fileDisplayName, // Use filename as 'exam' equivalent
-        hr: +d.HR,           // 'HR' is the heart rate column
-        // Also store other driving-specific data
+        student: d.subject,   // 'subject' => 'student'
+        exam: fileDisplayName, 
+        hr: +d.HR,
         ecg: +d.ECG,
         emg: +d.EMG,
         footGSR: +(d['foot GSR'] || 0),
         handGSR: +(d['hand GSR'] || 0),
         resp: +d.RESP
     }));
-    
-    // Update app data
+
     app.data.all = parsedData;
-    
-    // Get unique subjects (drivers)
+
+    // Unique subjects => "drivers"
     const subjects = [...new Set(parsedData.map(d => d.student))];
-    
-    // Update UI headings - change "Exams" to "Metrics"
+
+    // Adjust UI headings
     document.querySelector('#student-list').previousElementSibling.textContent = 'Drivers';
     document.querySelector('#exam-list').previousElementSibling.textContent = 'Metrics';
-    
-    // Update student list (drivers)
+
+    // Populate drivers
     updateListItems('student-list', subjects, 'data-student');
-    
-    // For driving data, we'll use different metrics instead of exams
+
+    // Hardcode metrics for driving data
     const metrics = ['Heart Rate', 'ECG', 'EMG', 'Foot GSR', 'Hand GSR', 'Respiration'];
     updateListItems('exam-list', metrics, 'data-exam');
-    
-    // Reset to first subject and metric
+
+    // Default selection
     if (subjects.length > 0) {
         app.currentStudent = subjects[0];
         document.getElementById('current-student').textContent = subjects[0];
     }
-    
-    app.currentExam = 'Heart Rate'; // Default to heart rate
-    
-    // Reset playback and update visuals
+    app.currentExam = 'Heart Rate'; // default
+
     resetPlayback();
 }
 
-// Helper function to update list items
+// ----------------------
+// UI List Helper
+// ----------------------
 function updateListItems(listId, items, dataAttribute) {
     const list = document.getElementById(listId);
     list.innerHTML = '';
-    
+
     items.forEach((item, index) => {
         const li = document.createElement('li');
         li.className = 'collection-item' + (index === 0 ? ' active' : '');
         li.setAttribute(dataAttribute, item);
         li.textContent = item;
         list.appendChild(li);
-        
-        // Add click event listener
-        li.addEventListener('click', function() {
-            // Update active state
+
+        li.addEventListener('click', () => {
+            // Clear any existing "active" items
             document.querySelectorAll(`#${listId} .collection-item`).forEach(el => {
                 el.classList.remove('active');
             });
-            this.classList.add('active');
-            
-            // Update state
+            li.classList.add('active');
+
+            // Update global state
             if (dataAttribute === 'data-student') {
                 app.currentStudent = item;
                 document.getElementById('current-student').textContent = item;
             } else {
                 app.currentExam = item;
             }
-            
-            // Reset playback and update visuals
+
             resetPlayback();
         });
     });
 }
 
-// Use sample data when CSV loading fails
+// ----------------------
+// Sample Data Fallback
+// ----------------------
 function useSampleData() {
-    app.data.all = generateSampleData();
+    app.data.all = generateSampleData(); // generate bigger sample set
     app.currentDataType = 'exam';
-    
-    // Update the UI
+
+    // Fake “Students” and “Exams”
     const students = ['S1', 'S2', 'S3'];
     const exams = ['Midterm 1', 'Midterm 2', 'Final Exam'];
-    
+
     updateListItems('student-list', students, 'data-student');
     updateListItems('exam-list', exams, 'data-exam');
-    
+
     app.currentStudent = 'S1';
     app.currentExam = 'Midterm 1';
-    
+
     document.getElementById('current-student').textContent = 'S1';
     document.getElementById('current-exam').textContent = 'Sample Data';
-    
+
     resetPlayback();
 }
 
-// Generate sample data for demonstration
+// Generate synthetic sample data
 function generateSampleData() {
     const students = ['S1', 'S2', 'S3'];
     const exams = ['Midterm 1', 'Midterm 2', 'Final Exam'];
     const allData = [];
-    
+
+    // Reuse base sampleData but replicate for multiple students/exams
     students.forEach(student => {
         exams.forEach(exam => {
-            // Generate unique patterns for each student/exam combination
+            // Clone the sampleData array
             const baseData = [...sampleData];
-            
-            // Modify the data based on student/exam
+
+            // Variation factors
             const factor = {
                 'S1': { 'Midterm 1': 1.0, 'Midterm 2': 1.1, 'Final Exam': 1.2 },
                 'S2': { 'Midterm 1': 0.9, 'Midterm 2': 1.05, 'Final Exam': 1.15 },
                 'S3': { 'Midterm 1': 1.1, 'Midterm 2': 1.2, 'Final Exam': 1.3 }
             };
-            
-            // Pattern modifier functions
             const patternModifiers = {
                 'S1': t => 1,
                 'S2': t => 1 + 0.2 * Math.sin(t / 20),
                 'S3': t => 1 + 0.15 * Math.cos(t / 30)
             };
-            
+
+            // Generate a new array with slight modifications
             const modifiedData = baseData.map(item => {
                 const f = factor[student][exam];
                 const p = patternModifiers[student](item.timestamp);
-                
-                // Cap heart rate at reasonable values
                 let hr = item.hr * f * p;
-                hr = Math.min(220, Math.max(60, hr));
-                
+                hr = Math.min(220, Math.max(60, hr)); // clamp
+
                 return {
                     timestamp: item.timestamp,
                     student: student,
@@ -361,115 +343,88 @@ function generateSampleData() {
                     temp: item.temp
                 };
             });
-            
+
             allData.push(...modifiedData);
         });
     });
-    
+
     return allData;
 }
 
 // Filter data based on current selection
 function filterData() {
     if (app.currentDataType === 'exam') {
-        // For exam data
+        // exam data
         app.data.filtered = app.data.all.filter(
             item => item.student === app.currentStudent && item.exam === app.currentExam
         );
     } else if (app.currentDataType === 'driving') {
-        // For driving data
+        // driving data
         app.data.filtered = app.data.all.filter(
             item => item.student === app.currentStudent
         );
     } else {
-        // Fallback
         app.data.filtered = app.data.all;
     }
 }
 
 // Initialize D3 chart
 function initChart() {
-    // Clear existing chart
     d3.select('#chart-container').selectAll('*').remove();
-    
-    // Set up dimensions
+
     const container = document.getElementById('chart-container');
     const margin = { top: 20, right: 30, bottom: 40, left: 50 };
     const width = container.clientWidth - margin.left - margin.right;
     const height = container.clientHeight - margin.top - margin.bottom;
-    
-    // Create SVG
+
     const svg = d3.select('#chart-container')
         .append('svg')
         .attr('width', container.clientWidth)
         .attr('height', container.clientHeight)
         .append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
-    
-    // Determine which metric to visualize based on current selection
+
+    // Decide what metric to plot
     let yValue;
     let yLabel;
-    
+
     if (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate') {
-        // For driving data with different metrics
         switch (app.currentExam) {
-            case 'ECG':
-                yValue = d => d.ecg;
-                yLabel = 'ECG';
-                break;
-            case 'EMG':
-                yValue = d => d.emg;
-                yLabel = 'EMG';
-                break;
-            case 'Foot GSR':
-                yValue = d => d.footGSR;
-                yLabel = 'Foot GSR';
-                break;
-            case 'Hand GSR':
-                yValue = d => d.handGSR;
-                yLabel = 'Hand GSR';
-                break;
-            case 'Respiration':
-                yValue = d => d.resp;
-                yLabel = 'Respiration';
-                break;
-            default:
-                yValue = d => d.hr;
-                yLabel = 'Heart Rate (BPM)';
+            case 'ECG':        yValue = d => d.ecg;      yLabel = 'ECG';        break;
+            case 'EMG':        yValue = d => d.emg;      yLabel = 'EMG';        break;
+            case 'Foot GSR':   yValue = d => d.footGSR;  yLabel = 'Foot GSR';   break;
+            case 'Hand GSR':   yValue = d => d.handGSR;  yLabel = 'Hand GSR';   break;
+            case 'Respiration':yValue = d => d.resp;     yLabel = 'Respiration';break;
+            default:           yValue = d => d.hr;       yLabel = 'Heart Rate (BPM)';
         }
     } else {
-        // Default to heart rate
+        // default to heart rate
         yValue = d => d.hr;
         yLabel = 'Heart Rate (BPM)';
     }
-    
-    // Set up scales
+
     const xScale = d3.scaleLinear()
         .domain([0, d3.max(app.data.filtered, d => d.timestamp)])
         .range([0, width]);
-        
     const yScale = d3.scaleLinear()
         .domain([
             d3.min(app.data.filtered, yValue) * 0.9,
             d3.max(app.data.filtered, yValue) * 1.1
         ])
         .range([height, 0]);
-    
-    // Create axes
+
     const xAxis = d3.axisBottom(xScale)
         .ticks(5)
         .tickFormat(d => `${Math.floor(d)}s`);
-        
     const yAxis = d3.axisLeft(yScale)
         .ticks(5);
-    
-    // Add X axis
+
+    // X axis
     svg.append('g')
         .attr('class', 'axis')
         .attr('transform', `translate(0,${height})`)
         .call(xAxis);
-        
-    // Add X axis label
+
     svg.append('text')
         .attr('class', 'axis-label')
         .attr('x', width / 2)
@@ -477,13 +432,12 @@ function initChart() {
         .style('text-anchor', 'middle')
         .style('fill', '#b3b3b3')
         .text('Time (seconds)');
-    
-    // Add Y axis
+
+    // Y axis
     svg.append('g')
         .attr('class', 'axis')
         .call(yAxis);
-        
-    // Add Y axis label
+
     svg.append('text')
         .attr('class', 'axis-label')
         .attr('transform', 'rotate(-90)')
@@ -492,20 +446,20 @@ function initChart() {
         .style('text-anchor', 'middle')
         .style('fill', '#b3b3b3')
         .text(yLabel);
-    
-    // Create line generator
+
+    // Line generator
     const lineGenerator = d3.line()
         .x(d => xScale(d.timestamp))
         .y(d => yScale(yValue(d)))
         .curve(d3.curveMonotoneX);
-    
-    // Add the data line
+
+    // Add data line
     svg.append('path')
         .datum(app.data.filtered)
         .attr('class', 'heart-rate-line')
         .attr('d', lineGenerator);
-    
-    // Add current position vertical line
+
+    // Vertical line for current time
     svg.append('line')
         .attr('class', 'current-time-line')
         .attr('id', 'current-time-line')
@@ -513,10 +467,11 @@ function initChart() {
         .attr('y1', 0)
         .attr('x2', xScale(app.currentTime))
         .attr('y2', height);
-    
-    // Create chart overlay for hover interactions
+
+    // Tooltip
     const tooltip = d3.select('#chart-tooltip');
-    
+
+    // Overlay for hover events
     svg.append('rect')
         .attr('class', 'chart-overlay')
         .attr('width', width)
@@ -525,16 +480,17 @@ function initChart() {
         .on('mousemove', function(event) {
             const [mouseX] = d3.pointer(event);
             const timestamp = xScale.invert(mouseX);
-            
-            // Find the closest data point
+
+            // Find nearest data point
             const bisect = d3.bisector(d => d.timestamp).left;
             const index = bisect(app.data.filtered, timestamp);
             const d0 = app.data.filtered[Math.max(0, index - 1)];
             const d1 = app.data.filtered[Math.min(app.data.filtered.length - 1, index)];
-            const d = (d0 && d1) ? (timestamp - d0.timestamp > d1.timestamp - timestamp ? d1 : d0) : null;
-            
+            const d = (d0 && d1) 
+                ? (timestamp - d0.timestamp > d1.timestamp - timestamp ? d1 : d0)
+                : null;
+
             if (d) {
-                // Get value based on current metric
                 const value = yValue(d);
                 
                 tooltip
@@ -542,8 +498,8 @@ function initChart() {
                     .style('left', `${event.pageX + 10}px`)
                     .style('top', `${event.pageY - 30}px`)
                     .html(`Time: ${d.timestamp.toFixed(1)}s<br>${yLabel}: ${value.toFixed(2)}`);
-                    
-                // Highlight the data point
+
+                // Highlight data point
                 svg.selectAll('.hover-point').remove();
                 svg.append('circle')
                     .attr('class', 'hover-point')
@@ -557,8 +513,8 @@ function initChart() {
             tooltip.classed('hidden', true);
             svg.selectAll('.hover-point').remove();
         });
-    
-    // Store chart information for later use
+
+    // Store chart objects
     app.chart.svg = svg;
     app.chart.width = width;
     app.chart.height = height;
@@ -567,36 +523,32 @@ function initChart() {
     app.chart.lineGenerator = lineGenerator;
 }
 
-// Update waveform visualization
+// Update the waveform visualization
 function updateWaveform() {
     const container = document.getElementById('waveform-bars');
     container.innerHTML = '';
-    
-    // Get current heart rate for display
+
+    // Current numeric value
     const currentValue = getCurrentValue();
-    const displayLabel = app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate' 
-        ? app.currentExam 
+    const displayLabel = (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate')
+        ? app.currentExam
         : 'Heart Rate';
-    
     document.getElementById('heart-rate-display').textContent = `${displayLabel}: ${currentValue.toFixed(1)}`;
-    
-    // Find the current index in the data
-    const timeStep = app.data.filtered.length > 0 
-        ? (app.data.filtered[1]?.timestamp - app.data.filtered[0]?.timestamp) || 10 
+
+    // Current index
+    const timeStep = app.data.filtered.length > 1
+        ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp)
         : 10;
-    
     const currentIndex = Math.floor(app.currentTime / timeStep);
-    
-    // Define visible range (how many bars to show)
+
+    // Show ~20 bars to the left/right
     const visibleRange = 20;
     const startIdx = Math.max(0, currentIndex - visibleRange);
     const endIdx = Math.min(app.data.filtered.length - 1, currentIndex + visibleRange);
-    
-    // Find min/max values for normalization
+
+    // Find min/max for normalization
     let minValue, maxValue;
-    
     if (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate') {
-        // For different metrics, find appropriate ranges
         switch (app.currentExam) {
             case 'ECG':
                 minValue = d3.min(app.data.filtered, d => d.ecg);
@@ -627,136 +579,121 @@ function updateWaveform() {
         minValue = 60;
         maxValue = 200;
     }
-    
-    // Create waveform bars
+
+    // Create bars
     for (let i = startIdx; i <= endIdx; i++) {
         if (i < 0 || i >= app.data.filtered.length) continue;
-        
+
         const dataPoint = app.data.filtered[i];
         const distanceFromCurrent = Math.abs(i - currentIndex);
         const opacity = 1 - (distanceFromCurrent / (visibleRange + 2));
-        
-        // Get the value for the current metric
+
+        // Extract the current metric
         let value;
         if (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate') {
             switch (app.currentExam) {
-                case 'ECG': value = dataPoint.ecg; break;
-                case 'EMG': value = dataPoint.emg; break;
-                case 'Foot GSR': value = dataPoint.footGSR; break;
-                case 'Hand GSR': value = dataPoint.handGSR; break;
-                case 'Respiration': value = dataPoint.resp; break;
-                default: value = dataPoint.hr;
+                case 'ECG':        value = dataPoint.ecg;      break;
+                case 'EMG':        value = dataPoint.emg;      break;
+                case 'Foot GSR':   value = dataPoint.footGSR;  break;
+                case 'Hand GSR':   value = dataPoint.handGSR;  break;
+                case 'Respiration':value = dataPoint.resp;     break;
+                default:           value = dataPoint.hr;
             }
         } else {
             value = dataPoint.hr;
         }
-        
-        // Normalize value between 0-1
+
+        // Normalize between 0..1
         const normalizedValue = (value - minValue) / (maxValue - minValue);
-        
-        // Calculate height between 5-80px
-        const height = Math.max(5, normalizedValue * 80);
-        
-        // Create bar element
+        const barHeight = Math.max(5, normalizedValue * 80);
+
         const bar = document.createElement('div');
         bar.className = 'waveform-bar';
-        bar.style.height = `${height}px`;
+        bar.style.height = `${barHeight}px`;
         bar.style.opacity = Math.max(0.2, opacity);
-        
-        // Highlight current bar
+
+        // Highlight the current bar
         if (i === currentIndex) {
             bar.style.backgroundColor = '#1db954';
             bar.style.width = '6px';
         } else {
             bar.style.backgroundColor = '#4a90e2';
         }
-        
         container.appendChild(bar);
     }
 }
 
-// Get current value based on current time and metric
+// Get the current metric value based on currentTime
 function getCurrentValue() {
     if (app.data.filtered.length === 0) return 0;
-    
-    // Find time step from data
-    const timeStep = app.data.filtered.length > 1 
-        ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp) 
+
+    const timeStep = app.data.filtered.length > 1
+        ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp)
         : 10;
-    
-    // Find closest index
     const index = Math.min(
         app.data.filtered.length - 1,
         Math.max(0, Math.floor(app.currentTime / timeStep))
     );
-    
     const dataPoint = app.data.filtered[index];
-    
-    // Return value based on current metric
+
     if (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate') {
         switch (app.currentExam) {
-            case 'ECG': return dataPoint.ecg;
-            case 'EMG': return dataPoint.emg;
-            case 'Foot GSR': return dataPoint.footGSR;
-            case 'Hand GSR': return dataPoint.handGSR;
-            case 'Respiration': return dataPoint.resp;
-            default: return dataPoint.hr;
+            case 'ECG':        return dataPoint.ecg;
+            case 'EMG':        return dataPoint.emg;
+            case 'Foot GSR':   return dataPoint.footGSR;
+            case 'Hand GSR':   return dataPoint.handGSR;
+            case 'Respiration':return dataPoint.resp;
+            default:           return dataPoint.hr;
         }
     }
-    
     return dataPoint.hr;
 }
 
-// Update timeline and time display
+// Update time display and timeline progress
 function updateTimeDisplay() {
     const currentTime = app.currentTime;
     const maxTime = app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0;
-    
-    // Format times
+
     document.getElementById('current-time').textContent = formatTime(currentTime);
     document.getElementById('total-time').textContent = formatTime(maxTime);
-    
-    // Update progress bar
+
     const progress = (maxTime > 0) ? (currentTime / maxTime) * 100 : 0;
     document.getElementById('timeline-progress').style.width = `${progress}%`;
 }
 
-// Format seconds to MM:SS
+// Convert seconds to M:SS
 function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Toggle playback (play/pause)
+// Toggle play/pause
 function togglePlayback() {
     app.isPlaying = !app.isPlaying;
     
-    // Update button state
     document.getElementById('play-icon').classList.toggle('hidden', app.isPlaying);
     document.getElementById('pause-icon').classList.toggle('hidden', !app.isPlaying);
-    
+
     if (app.isPlaying) {
-        // Reset if at the end
+        // if at end, reset
         const maxTime = app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0;
         if (app.currentTime >= maxTime) {
             setCurrentTime(0);
         }
-        
-        // Start playback
+
         app.playbackInterval = setInterval(() => {
             const maxTime = app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0;
             if (app.currentTime >= maxTime) {
                 stopPlayback();
             } else {
-                // Determine playback speed based on data density
-                const timeStep = app.data.filtered.length > 1 
-                    ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp) 
+                // playback steps
+                const timeStep = app.data.filtered.length > 1
+                    ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp)
                     : 5;
-                
                 setCurrentTime(app.currentTime + timeStep);
             }
-        }, 250); // Update every 250ms (playback speed is faster than real-time)
+        }, 250);
     } else {
         stopPlayback();
     }
@@ -770,25 +707,21 @@ function stopPlayback() {
     document.getElementById('pause-icon').classList.add('hidden');
 }
 
-// Skip time forward or backward
+// Skip forward/back
 function skipTime(seconds) {
     const maxTime = app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0;
     const newTime = Math.max(0, Math.min(maxTime, app.currentTime + seconds));
     setCurrentTime(newTime);
 }
 
-// Set current time and update visuals
+// Update the current time in the app and update visuals
 function setCurrentTime(time) {
     app.currentTime = time;
-    
-    // Update time display and progress bar
     updateTimeDisplay();
-    
-    // Update waveform visualization
     updateWaveform();
-    
-    // Update position line in chart
-    if (app.chart.svg && app.chart.xScale) {
+
+    // Move the vertical line
+    if (app.chart.xScale) {
         const x = app.chart.xScale(time);
         d3.select('#current-time-line')
             .attr('x1', x)
@@ -796,29 +729,19 @@ function setCurrentTime(time) {
     }
 }
 
-// Reset playback when changing student or exam
+// Reset playback when we change student or exam
 function resetPlayback() {
-    // Stop any active playback
     stopPlayback();
-    
-    // Reset time to start
     app.currentTime = 0;
-    
-    // Filter data for the new selection
     filterData();
-    
-    // Update visualizations
     initChart();
     updateWaveform();
     updateTimeDisplay();
 }
 
-// Set up event listeners
+// Basic event listeners
 function setupEventListeners() {
-    // Play/pause button
     document.getElementById('play-btn').addEventListener('click', togglePlayback);
-    
-    // Skip forward/backward
     document.getElementById('skip-forward-btn').addEventListener('click', () => skipTime(30));
     document.getElementById('skip-back-btn').addEventListener('click', () => skipTime(-30));
     
@@ -827,12 +750,10 @@ function setupEventListeners() {
         const rect = this.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const ratio = x / rect.width;
-        
-        // Calculate new time position
         const maxTime = app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0;
         setCurrentTime(Math.floor(ratio * maxTime));
     });
-    
+
     // Handle window resize
     window.addEventListener('resize', debounce(() => {
         initChart();
@@ -840,35 +761,30 @@ function setupEventListeners() {
     }, 250));
 }
 
-// Utility function: Debounce to limit function calls (for resize events)
+// Debounce utility
 function debounce(func, wait) {
     let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
+    return function(...args) {
         clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+        timeout = setTimeout(() => func(...args), wait);
     };
 }
 
-// Add a favicon to prevent 404 error
+// Optional: add a favicon in case your server complains about 404 on favicon.ico
 function addFavicon() {
     const link = document.createElement('link');
     link.rel = 'icon';
-    link.href = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4L10.5 9.5L5 11L10.5 12.5L12 18L13.5 12.5L19 11L13.5 9.5L12 4Z" fill="%231db954"/></svg>';
+    link.href = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" ...>...</svg>';
     document.head.appendChild(link);
 }
 
-// Initialize the application when the document is ready
+// ---------------------------------------------------------
+// Initialize the app on DOMContentLoaded
+// ---------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    // Add favicon to prevent 404 error
     addFavicon();
-    
-    // Set up event listeners
     setupEventListeners();
     
-    // Scan for CSV files in the data directory
+    // Attempt to scan the data/ directory for CSV files
     scanDataDirectory();
 });
