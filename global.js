@@ -57,8 +57,8 @@ async function scanDataDirectory() {
             sidebar.appendChild(filesSection);
         }
         
-        // Fetch list of CSV files (this works with Live Server)
-        const response = await fetch('/data/');
+        // Fetch list of CSV files with updated path
+        const response = await fetch('/cognitive-waveform/data/');
         const html = await response.text();
         
         // Create a temporary element to parse the HTML
@@ -76,7 +76,8 @@ async function scanDataDirectory() {
                 const filename = path.split('/').pop();
                 return {
                     name: filename,
-                    path: `data/${filename}`
+                    // Updated path to include the proper root directory
+                    path: `/cognitive-waveform/data/${filename}`
                 };
             });
         
