@@ -103,49 +103,139 @@ body {
     position: relative;
 }
 
-/* Waveform visualization */
+@keyframes pulse {
+    0% { transform: scaleY(1); }
+    100% { transform: scaleY(1.1); }
+}
+
 .waveform-container {
     position: relative;
     width: 100%;
-    height: 120px;
+    height: 150px;
     background-color: #121212;
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 20px;
 }
 
+.waveform-animation {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+}
+
+.waveform-bar {
+    position: absolute;
+    border-radius: 1px;
+    transition: height 0.2s;
+}
+
+.top-bar {
+    bottom: calc(50% + 1px); /* Position just above the center line */
+    transform-origin: bottom;
+    border-radius: 1px 1px 0 0;
+}
+
+.bottom-bar {
+    top: calc(50% + 1px); /* Position just below the center line */
+    transform-origin: top;
+    border-radius: 0 0 1px 1px;
+}
+
 .waveform-center-line {
     position: absolute;
     width: 100%;
     height: 1px;
-    background-color: #333;
+    background-color: rgba(255, 255, 255, 0.2);
     top: 50%;
-}
-
-.waveform-bars {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    padding: 0 10px;
-}
-
-.waveform-bar {
-    width: 4px;
-    background-color: #1db954;
-    margin: 0 3px;
-    border-radius: 2px;
-    transform-origin: center;
+    left: 0;
+    z-index: 1;
 }
 
 .heart-rate-display {
     position: absolute;
     bottom: 10px;
     left: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 10;
+}
+
+.waveform-labels {
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    color: #ffffff;
+    font-size: 11px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 3px 8px;
+    border-radius: 3px;
+    z-index: 10;
+}
+
+/* Pulse visualization styling */
+.pulse-container {
+    width: 100%;
+    height: 100px;
+    background-color: #121212;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pulse-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #1db954;
+    position: absolute;
+    transform: scale(1);
+    transition: transform 0.5s cubic-bezier(0.1, 0.8, 0.3, 1), background-color 0.3s;
+    box-shadow: 0 0 15px rgba(29, 185, 84, 0.5);
+}
+
+.pulse-ring {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 4px solid #1db954;
+    position: absolute;
+    opacity: 0;
+}
+
+.pulse-ring.animate {
+    animation: pulse-ring 1.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+.pulse-beat-indicator {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff;
+    font-size: 12px;
     background-color: rgba(0, 0, 0, 0.6);
     padding: 4px 8px;
     border-radius: 4px;
-    font-size: 12px;
+    z-index: 10;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.5);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
 }
 
 /* Player controls */
@@ -217,6 +307,48 @@ body {
 .play-btn:hover {
     transform: scale(1.05);
     background-color: #1ed760;
+}
+
+/* Volume control */
+.volume-control {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+    padding: 0 20px;
+}
+
+.volume-icon {
+    color: #b3b3b3;
+    margin-right: 10px;
+}
+
+.volume-slider {
+    flex-grow: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #535353;
+    border-radius: 2px;
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+    border: none;
 }
 
 /* D3 Chart styling */

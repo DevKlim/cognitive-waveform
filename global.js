@@ -609,103 +609,177 @@ function initChart() {
     app.chart.lineGenerator = lineGenerator;
 }
 
-// Update the waveform visualization
+// Update the waveform visualization - IMPROVED VERSION
 function updateWaveform() {
     const container = document.getElementById('waveform-bars');
     container.innerHTML = '';
-
-    // Current numeric value
+    
+    // Get current value for display
     const currentValue = getCurrentValue();
-    const displayLabel = (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate')
-        ? app.currentExam
+    const displayLabel = app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate' 
+        ? app.currentExam 
         : 'Heart Rate';
+    
     document.getElementById('heart-rate-display').textContent = `${displayLabel}: ${currentValue.toFixed(1)}`;
-
-    // Current index
-    const timeStep = app.data.filtered.length > 1
-        ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp)
+    
+    // Find the current index in the data
+    const timeStep = app.data.filtered.length > 0 
+        ? (app.data.filtered[1]?.timestamp - app.data.filtered[0]?.timestamp) || 10 
         : 10;
+    
     const currentIndex = Math.floor(app.currentTime / timeStep);
-
-    // Show ~20 bars to the left/right
-    const visibleRange = 20;
+    
+    // Define visible range (how many bars to show)
+    const visibleRange = 40; // More bars for a denser waveform look
     const startIdx = Math.max(0, currentIndex - visibleRange);
     const endIdx = Math.min(app.data.filtered.length - 1, currentIndex + visibleRange);
-
-    // Find min/max for normalization
-    let minValue, maxValue;
+    
+    // Add center line first
+    const centerLine = document.createElement('div');
+    centerLine.className = 'waveform-center-line';
+    container.appendChild(centerLine);
+    
+    // Create parent container for the waveform
+    const waveformContainer = document.createElement('div');
+    waveformContainer.className = 'waveform-animation';
+    
+    // Get value getter based on current metric
+    let valueGetter;
     if (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate') {
         switch (app.currentExam) {
-            case 'ECG':
-                minValue = d3.min(app.data.filtered, d => d.ecg);
-                maxValue = d3.max(app.data.filtered, d => d.ecg);
-                break;
-            case 'EMG':
-                minValue = d3.min(app.data.filtered, d => d.emg);
-                maxValue = d3.max(app.data.filtered, d => d.emg);
-                break;
-            case 'Foot GSR':
-                minValue = d3.min(app.data.filtered, d => d.footGSR);
-                maxValue = d3.max(app.data.filtered, d => d.footGSR);
-                break;
-            case 'Hand GSR':
-                minValue = d3.min(app.data.filtered, d => d.handGSR);
-                maxValue = d3.max(app.data.filtered, d => d.handGSR);
-                break;
-            case 'Respiration':
-                minValue = d3.min(app.data.filtered, d => d.resp);
-                maxValue = d3.max(app.data.filtered, d => d.resp);
-                break;
-            default:
-                minValue = 60;
-                maxValue = 200;
+            case 'ECG': valueGetter = d => d.ecg; break;
+            case 'EMG': valueGetter = d => d.emg; break;
+            case 'Foot GSR': valueGetter = d => d.footGSR; break;
+            case 'Hand GSR': valueGetter = d => d.handGSR; break;
+            case 'Respiration': valueGetter = d => d.resp; break;
+            default: valueGetter = d => d.hr;
         }
     } else {
-        // Default heart rate range
-        minValue = 60;
-        maxValue = 200;
+        valueGetter = d => d.hr;
     }
-
-    // Create bars
+    
+    // Get min/max values
+    const minValue = d3.min(app.data.filtered, valueGetter);
+    const maxValue = d3.max(app.data.filtered, valueGetter);
+    
+    // Detect significant jumps
+    const jumpThreshold = (maxValue - minValue) * 0.15;
+    const jumps = [];
+    
+    for (let i = 1; i < app.data.filtered.length; i++) {
+        const current = valueGetter(app.data.filtered[i]);
+        const previous = valueGetter(app.data.filtered[i-1]);
+        const change = Math.abs(current - previous);
+        
+        if (change > jumpThreshold) {
+            jumps.push(i);
+        }
+    }
+    
+    // Create bars for the waveform
+    const barWidth = 3; // Width of each bar
+    const barGap = 1; // Gap between bars
+    const maxBarHeight = 200; // Maximum height for a bar (in pixels)
+    
+    // Calculate total width for all bars
+    const totalWidth = (barWidth + barGap) * (endIdx - startIdx + 1);
+    const containerWidth = container.clientWidth;
+    const startOffset = (containerWidth - totalWidth) / 2;
+    
     for (let i = startIdx; i <= endIdx; i++) {
         if (i < 0 || i >= app.data.filtered.length) continue;
-
+        
         const dataPoint = app.data.filtered[i];
         const distanceFromCurrent = Math.abs(i - currentIndex);
-        const opacity = 1 - (distanceFromCurrent / (visibleRange + 2));
-
-        // Extract the current metric
-        let value;
-        if (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate') {
-            switch (app.currentExam) {
-                case 'ECG':        value = dataPoint.ecg;      break;
-                case 'EMG':        value = dataPoint.emg;      break;
-                case 'Foot GSR':   value = dataPoint.footGSR;  break;
-                case 'Hand GSR':   value = dataPoint.handGSR;  break;
-                case 'Respiration':value = dataPoint.resp;     break;
-                default:           value = dataPoint.hr;
-            }
-        } else {
-            value = dataPoint.hr;
-        }
-
-        // Normalize between 0..1
-        const normalizedValue = (value - minValue) / (maxValue - minValue);
-        const barHeight = Math.max(5, normalizedValue * 80);
-
-        const bar = document.createElement('div');
-        bar.className = 'waveform-bar';
-        bar.style.height = `${barHeight}px`;
-        bar.style.opacity = Math.max(0.2, opacity);
-
-        // Highlight the current bar
+        const opacity = 1 - (distanceFromCurrent / (visibleRange + 10));
+        
+        // Get the value for this data point
+        const value = valueGetter(dataPoint);
+        
+        // Check for jump point
+        const isJumpPoint = jumps.includes(i);
+        
+        // Normalize value between 0-1 with slight exaggeration
+        const exaggerationFactor = 1.4;
+        let normalizedValue = (value - minValue) / (maxValue - minValue);
+        
+        // Apply moderate exaggeration to make pattern more visible
+        normalizedValue = Math.pow(normalizedValue, 1/exaggerationFactor);
+        
+        // Calculate bar height - split into top and bottom bars
+        const barHeight = Math.max(2, normalizedValue * maxBarHeight / 2);
+        
+        // Calculate position
+        const leftPosition = startOffset + ((i - startIdx) * (barWidth + barGap));
+        
+        // Top bar (above center line)
+        const topBar = document.createElement('div');
+        topBar.className = 'waveform-bar top-bar';
+        topBar.style.width = `${barWidth}px`;
+        topBar.style.height = `${barHeight}px`;
+        topBar.style.left = `${leftPosition}px`;
+        topBar.style.opacity = Math.max(0.25, opacity);
+        
+        // Bottom bar (mirror of top bar)
+        const bottomBar = document.createElement('div');
+        bottomBar.className = 'waveform-bar bottom-bar';
+        bottomBar.style.width = `${barWidth}px`;
+        bottomBar.style.height = `${barHeight}px`;
+        bottomBar.style.left = `${leftPosition}px`;
+        bottomBar.style.opacity = Math.max(0.25, opacity);
+        
+        // Style based on whether this is a jump point, current position, or regular bar
+        let barColor, barGlow;
+        
         if (i === currentIndex) {
-            bar.style.backgroundColor = '#1db954';
-            bar.style.width = '6px';
+            // Current position - bright green with glow
+            barColor = '#1db954';
+            barGlow = '0 0 6px rgba(29, 185, 84, 0.7)';
+            topBar.style.width = `${barWidth + 1}px`;
+            bottomBar.style.width = `${barWidth + 1}px`;
+        } else if (isJumpPoint) {
+            // Jump points - red with subtle glow
+            barColor = '#ff6b6b';
+            barGlow = '0 0 4px rgba(255, 107, 107, 0.6)';
         } else {
-            bar.style.backgroundColor = '#4a90e2';
+            // Regular points - blue gradient based on value
+            const hue = 210 + (normalizedValue * 30); // Subtle blue variation
+            barColor = `hsl(${hue}, 80%, 55%)`;
+            barGlow = '';
         }
-        container.appendChild(bar);
+        
+        // Apply colors and effects
+        topBar.style.backgroundColor = barColor;
+        bottomBar.style.backgroundColor = barColor;
+        
+        if (barGlow) {
+            topBar.style.boxShadow = barGlow;
+            bottomBar.style.boxShadow = barGlow;
+        }
+        
+        // Add slight animation effect for current bars
+        if (Math.abs(i - currentIndex) < 5) {
+            const animationDuration = 0.3 + (Math.random() * 0.3);
+            const animationDelay = Math.random() * 0.2;
+            
+            topBar.style.animation = `pulse ${animationDuration}s ${animationDelay}s infinite alternate`;
+            bottomBar.style.animation = `pulse ${animationDuration}s ${animationDelay}s infinite alternate`;
+        }
+        
+        // Add bars directly to the container
+        waveformContainer.appendChild(topBar);
+        waveformContainer.appendChild(bottomBar);
+    }
+    
+    // Add the waveform to the container
+    container.appendChild(waveformContainer);
+    
+    // Add jump counter if needed
+    if (jumps.length > 0) {
+        const labelContainer = document.createElement('div');
+        labelContainer.className = 'waveform-labels';
+        labelContainer.textContent = `${jumps.length} significant changes detected`;
+        container.appendChild(labelContainer);
     }
 }
 
@@ -754,42 +828,168 @@ function formatTime(seconds) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+// Audio context for sonification
+let audioContext = null;
+let oscillator = null;
+let gainNode = null;
+
+// Initialize audio context
+function initAudio() {
+    // Create audio context if not already created
+    if (!audioContext) {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create gain node for volume control
+            gainNode = audioContext.createGain();
+            gainNode.gain.value = 0.2; // Set volume to 20%
+            gainNode.connect(audioContext.destination);
+            
+            console.log('Audio context initialized successfully');
+        } catch (e) {
+            console.error('Failed to initialize audio context:', e);
+        }
+    }
+}
+
+// Start sonification
+function startSonification() {
+    if (!audioContext) initAudio();
+    
+    if (!audioContext) return; // Exit if audio context creation failed
+    
+    try {
+        // Create oscillator if not exists
+        if (!oscillator) {
+            oscillator = audioContext.createOscillator();
+            oscillator.type = 'triangle'; // sine, square, sawtooth, triangle
+            oscillator.connect(gainNode);
+            oscillator.start();
+            console.log('Sonification started');
+        }
+    } catch (e) {
+        console.error('Failed to start sonification:', e);
+    }
+}
+
+// Stop sonification
+function stopSonification() {
+    if (oscillator) {
+        try {
+            oscillator.stop();
+            oscillator.disconnect();
+            oscillator = null;
+            console.log('Sonification stopped');
+        } catch (e) {
+            console.error('Error stopping sonification:', e);
+            oscillator = null;
+        }
+    }
+}
+
+// Update sound frequency based on current data value
+function updateSonification() {
+    if (!oscillator) return;
+    
+    try {
+        // Get current value
+        const currentValue = getCurrentValue();
+        
+        // Get min/max values based on current metric
+        let minValue, maxValue;
+        let valueGetter;
+        
+        if (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate') {
+            switch (app.currentExam) {
+                case 'ECG': valueGetter = d => d.ecg; break;
+                case 'EMG': valueGetter = d => d.emg; break;
+                case 'Foot GSR': valueGetter = d => d.footGSR; break;
+                case 'Hand GSR': valueGetter = d => d.handGSR; break;
+                case 'Respiration': valueGetter = d => d.resp; break;
+                default: valueGetter = d => d.hr;
+            }
+        } else {
+            valueGetter = d => d.hr;
+        }
+        
+        minValue = d3.min(app.data.filtered, valueGetter);
+        maxValue = d3.max(app.data.filtered, valueGetter);
+        
+        // Apply some padding to min/max values
+        minValue = minValue * 0.9;
+        maxValue = maxValue * 1.1;
+        
+        // Map the current value to frequency range (200Hz - 1000Hz)
+        const minFrequency = 50;
+        const maxFrequency = 2000;
+        
+        // Normalize the current value
+        const normalizedValue = (currentValue - minValue) / (maxValue - minValue);
+        
+        // Calculate frequency
+        const frequency = minFrequency + normalizedValue * (maxFrequency - minFrequency);
+        
+        // Update oscillator frequency with smoothing
+        oscillator.frequency.setTargetAtTime(frequency, audioContext.currentTime, 0.1);
+    } catch (e) {
+        console.error('Error updating sonification:', e);
+    }
+}
+
 // Toggle play/pause
 function togglePlayback() {
     app.isPlaying = !app.isPlaying;
     
+    // Update button state
     document.getElementById('play-icon').classList.toggle('hidden', app.isPlaying);
     document.getElementById('pause-icon').classList.toggle('hidden', !app.isPlaying);
-
+    
     if (app.isPlaying) {
-        // if at end, reset
+        // Start sonification
+        startSonification();
+        
+        // Reset if at the end
         const maxTime = app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0;
         if (app.currentTime >= maxTime) {
             setCurrentTime(0);
         }
-
+        
+        // Start playback
         app.playbackInterval = setInterval(() => {
             const maxTime = app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0;
             if (app.currentTime >= maxTime) {
                 stopPlayback();
             } else {
-                // playback steps
-                const timeStep = app.data.filtered.length > 1
-                    ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp)
+                // Determine playback speed based on data density
+                const timeStep = app.data.filtered.length > 1 
+                    ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp) 
                     : 5;
+                
                 setCurrentTime(app.currentTime + timeStep);
+                
+                // Update sound
+                updateSonification();
+                
+                // Update pulse visualization if it exists
+                if (typeof updatePulseVisualization === 'function') {
+                    updatePulseVisualization();
+                }
             }
-        }, 250);
+        }, 50); // Update every 250ms (playback speed is faster than real-time)
     } else {
         stopPlayback();
     }
 }
 
+// Stop playback
 function stopPlayback() {
     clearInterval(app.playbackInterval);
     app.isPlaying = false;
     document.getElementById('play-icon').classList.remove('hidden');
     document.getElementById('pause-icon').classList.add('hidden');
+    
+    // Stop sonification
+    stopSonification();
 }
 
 // Skip forward/back
@@ -802,11 +1002,20 @@ function skipTime(seconds) {
 // Update the current time in the app and update visuals
 function setCurrentTime(time) {
     app.currentTime = time;
+    
+    // Update time display and progress bar
     updateTimeDisplay();
+    
+    // Update waveform visualization
     updateWaveform();
-
-    // Move the vertical line
-    if (app.chart.xScale) {
+    
+    // Update pulse visualization if it exists
+    if (typeof updatePulseVisualization === 'function') {
+        updatePulseVisualization();
+    }
+    
+    // Update position line in chart
+    if (app.chart.svg && app.chart.xScale) {
         const x = app.chart.xScale(time);
         d3.select('#current-time-line')
             .attr('x1', x)
@@ -822,6 +1031,25 @@ function resetPlayback() {
     initChart();
     updateWaveform();
     updateTimeDisplay();
+    
+    // Update pulse visualization if it exists
+    if (typeof updatePulseVisualization === 'function') {
+        updatePulseVisualization();
+    }
+}
+
+// Setup volume control
+function setupVolumeControl() {
+    const volumeSlider = document.getElementById('volume-slider');
+    if (!volumeSlider) return;
+    
+    // Set initial volume
+    volumeSlider.addEventListener('input', function() {
+        const volume = this.value / 100;
+        if (gainNode) {
+            gainNode.gain.value = volume;
+        }
+    });
 }
 
 // Basic event listeners
@@ -838,12 +1066,139 @@ function setupEventListeners() {
         const maxTime = app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0;
         setCurrentTime(Math.floor(ratio * maxTime));
     });
+    
+    // Setup volume control if it exists
+    setupVolumeControl();
 
     // Handle window resize
     window.addEventListener('resize', debounce(() => {
         initChart();
         updateWaveform();
     }, 250));
+}
+
+// Pulse visualization - check if container exists first
+function createPulseVisualization() {
+    // Check if pulse container already exists or should be created
+    if (!document.getElementById('pulse-container')) {
+        const visualizationContainer = document.querySelector('.visualization-container');
+        if (!visualizationContainer) return; // Exit if main container doesn't exist
+        
+        const waveformContainer = document.getElementById('waveform-container');
+        if (!waveformContainer) return; // Exit if waveform container doesn't exist
+        
+        // Create pulse container and its children
+        const pulseContainer = document.createElement('div');
+        pulseContainer.id = 'pulse-container';
+        pulseContainer.className = 'pulse-container';
+        
+        const pulseCircle = document.createElement('div');
+        pulseCircle.id = 'pulse-circle';
+        pulseCircle.className = 'pulse-circle';
+        
+        const pulseRing = document.createElement('div');
+        pulseRing.id = 'pulse-ring';
+        pulseRing.className = 'pulse-ring';
+        
+        const pulseIndicator = document.createElement('div');
+        pulseIndicator.id = 'pulse-beat-indicator';
+        pulseIndicator.className = 'pulse-beat-indicator';
+        pulseIndicator.textContent = 'Waiting for beat...';
+        
+        // Assemble the components
+        pulseContainer.appendChild(pulseCircle);
+        pulseContainer.appendChild(pulseRing);
+        pulseContainer.appendChild(pulseIndicator);
+        
+        // Insert after waveform container
+        waveformContainer.insertAdjacentElement('afterend', pulseContainer);
+        
+        console.log('Pulse visualization created');
+    }
+}
+
+// Update pulse visualization
+function updatePulseVisualization() {
+    const pulseCircle = document.getElementById('pulse-circle');
+    const pulseRing = document.getElementById('pulse-ring');
+    const pulseIndicator = document.getElementById('pulse-beat-indicator');
+    
+    if (!pulseCircle || !pulseRing || !pulseIndicator) return;
+    
+    // Find current data point and value
+    const timeStep = app.data.filtered.length > 0 
+        ? (app.data.filtered[1]?.timestamp - app.data.filtered[0]?.timestamp) || 10 
+        : 10;
+    
+    const currentIndex = Math.floor(app.currentTime / timeStep);
+    
+    // Ensure we have data points and we're not at the beginning
+    if (app.data.filtered.length < 2 || currentIndex < 1) {
+        pulseIndicator.textContent = 'Waiting for beat...';
+        return;
+    }
+    
+    // Get current and previous values
+    let currentValue, previousValue;
+    let valueGetter;
+    
+    if (app.currentDataType === 'driving' && app.currentExam !== 'Heart Rate') {
+        // For different metrics, use appropriate values
+        switch (app.currentExam) {
+            case 'ECG': valueGetter = d => d.ecg; break;
+            case 'EMG': valueGetter = d => d.emg; break;
+            case 'Foot GSR': valueGetter = d => d.footGSR; break;
+            case 'Hand GSR': valueGetter = d => d.handGSR; break;
+            case 'Respiration': valueGetter = d => d.resp; break;
+            default: valueGetter = d => d.hr;
+        }
+    } else {
+        valueGetter = d => d.hr;
+    }
+    
+    currentValue = valueGetter(app.data.filtered[currentIndex]);
+    previousValue = valueGetter(app.data.filtered[currentIndex - 1]);
+    
+    // Calculate min/max values for the dataset
+    let minValue = d3.min(app.data.filtered, valueGetter);
+    let maxValue = d3.max(app.data.filtered, valueGetter);
+    
+    // Calculate value range and set a threshold for significant changes
+    const range = maxValue - minValue;
+    const changeThreshold = range * 0.05; // 5% change is significant
+    
+    // Calculate absolute change
+    const change = Math.abs(currentValue - previousValue);
+    const percentChange = (change / range) * 100;
+    
+    // Update pulse circle size based on current value (normalized)
+    const normalizedValue = (currentValue - minValue) / range;
+    const pulseSize = 40 + (normalizedValue * 60); // Scale between 40px and 100px
+    
+    pulseCircle.style.width = `${pulseSize}px`;
+    pulseCircle.style.height = `${pulseSize}px`;
+    
+    // Generate pulse effect on significant changes
+    if (change > changeThreshold) {
+        // Trigger pulse animation
+        pulseRing.classList.remove('animate');
+        void pulseRing.offsetWidth; // Force reflow to restart animation
+        pulseRing.classList.add('animate');
+        
+        // Change circle color based on whether value increased or decreased
+        if (currentValue > previousValue) {
+            pulseCircle.style.backgroundColor = '#1db954'; // Green for increase
+        } else {
+            pulseCircle.style.backgroundColor = '#ff6b6b'; // Red for decrease
+        }
+        
+        // Update indicator
+        pulseIndicator.textContent = `Beat detected! ${percentChange.toFixed(1)}% change`;
+    } else {
+        // Reset color for small changes
+        pulseCircle.style.backgroundColor = '#4a90e2'; // Blue for normal
+        pulseIndicator.textContent = 'Monitoring...';
+    }
 }
 
 // Debounce utility
@@ -913,9 +1268,14 @@ function fixSVGPaths() {
 // ---------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
     addFavicon();
-    setupEventListeners();
     fixSVGPaths(); // Fix any SVG path issues
+
+    // Create pulse visualization
+    createPulseVisualization();
     
-    // Attempt to scan the data directory for CSV files (now using data.json)
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Scan for CSV files in the data directory
     scanDataDirectory();
 });
