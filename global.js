@@ -41,7 +41,7 @@ async function scanDataDirectory() {
         
         // Fetch the directory listing at "data/"
         // or "data/index.html" if that's how your server is set up
-        const baseUrl = window.location.pathname.includes('/cognitive-waveform') 
+        const baseUrl = window.location.hostname.includes('github.io') 
             ? '/cognitive-waveform/' 
             : '/';
         const response = await fetch(`${baseUrl}data/`);
