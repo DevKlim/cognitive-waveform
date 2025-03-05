@@ -414,3 +414,54 @@ body {
         margin-bottom: 20px;
     }
 }
+
+.project-intro {
+    width: 90%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #121212;
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.intro-container {
+    text-align: left;
+}
+
+.intro-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.intro-subtitle {
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.intro-text {
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.intro-list {
+    font-size: 16px;
+    padding-left: 30px;
+    line-height: 1.6;
+    list-style-type: disc;
+}
+
+.intro-list ul {
+    padding-left: 20px;
+    list-style-type: circle;
+}
+
+.intro-list li {
+    margin-bottom: 8px;
+}
+
