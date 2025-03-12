@@ -208,3 +208,57 @@ function initChart() {
     app.chart.yScale = yScale;
     app.chart.lineGenerator = lineGenerator;
 }
+
+/**
+ * Chart X-Axis Label Position Fix
+ * This adjusts the position of the X-axis label to be closer to the chart
+ */
+
+/**
+ * Create a function to patch the existing initChart function
+ */
+function patchChartInitFunction() {
+  // Store the original function
+  const originalInitChart = window.initChart;
+  
+  // Replace with our patched version
+  window.initChart = function() {
+    // Call the original function first
+    originalInitChart.apply(this, arguments);
+    
+    // Now adjust the X-axis label position
+    const svg = d3.select('#chart-container svg');
+    if (!svg.empty()) {
+      // Find the X-axis label
+      const xAxisLabel = svg.select('.axis-label:not([transform*="rotate"])');
+      
+      if (!xAxisLabel.empty()) {
+        // Get the current height value from the chart container
+        const chartContainer = document.getElementById('chart-container');
+        if (!chartContainer) return;
+        
+        // Get margin from the original function (approximated if needed)
+        const margin = { top: 100, right: 20, bottom: 100, left: 50 };
+        const height = chartContainer.clientHeight - margin.top - margin.bottom;
+        
+        // Adjust the Y position to be closer to the chart
+        // Original is (height + margin.bottom - 5)
+        // We'll reduce the gap by moving it 30px higher
+        xAxisLabel.attr('y', height + (margin.bottom - 35));
+        
+        console.log('X-axis label position adjusted');
+      }
+    }
+  };
+  
+  // Force a chart redraw to apply changes
+  if (typeof app !== 'undefined' && app.data && app.data.filtered.length > 0) {
+    initChart();
+  }
+}
+
+// Initialize our patch when the DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Use a short delay to ensure the original function is loaded
+  setTimeout(patchChartInitFunction, 1500);
+});

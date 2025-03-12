@@ -823,23 +823,6 @@
     margin: 0 15px;
   }
   
-  /* Sound profile selector */
-  .sound-profile-container {
-    margin-top: 15px;
-    padding: 5px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .sound-profile-description {
-    color: #b3b3b3;
-    font-size: 12px;
-    font-style: italic;
-    margin-top: 6px;
-    line-height: 1.4;
-  }
-  
   /* ================================
      BOTTOM WAVE STYLES
      ================================ */
@@ -950,6 +933,7 @@
     transform: scale(1.1);
     background-color: #1ed760;
   }
+  
   
   /* Waveform drawing section */
   .waveform-drawing-section {

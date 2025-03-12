@@ -108,6 +108,11 @@ function setupUIComponents() {
             }
         });
     }
+
+    // Initialize custom interfaces if available
+    if (typeof initCustomWaveformInterface === 'function') {
+        initCustomWaveformInterface();
+    }
     
     // Window resize handler
     window.addEventListener('resize', debounce(() => {

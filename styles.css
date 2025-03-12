@@ -9,3 +9,5 @@
 
 /* Import screens styles */
 @import url('./css/screens.css');
+
+@import url('./custom-waveform.css');

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognify - Data Visualization</title>
     <link rel="stylesheet" href="css/visualizer.css">
+    <link rel="stylesheet" href="css/custom-waveform.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 15L45 35 25 40 37 52 32 72 50 62 68 72 63 52 75 40 55 35z' fill='%231db954'/></svg>">
 </head>
 <body>
@@ -140,6 +141,20 @@
                 <div id="sound-profile-container" class="sound-profile-container">
                     <!-- Sound profile dropdown will be added here -->
                 </div>
+                
+                <!-- Sound Upload Section - this will be managed by sound-upload.js -->
+                <div id="sound-upload-section" class="sound-upload-section" style="display: none;">
+                    <h3 class="sound-upload-header">Upload Custom Sound</h3>
+                    <p class="sound-upload-description">Upload an audio file that will loop and change pitch based on data values.</p>
+                    <input type="file" id="sound-file-input" class="sound-file-input" accept="audio/*" style="display: none;">
+                    <label for="sound-file-input" class="sound-upload-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                        </svg>
+                        Upload Sound File
+                    </label>
+                    <div id="sound-preview" class="sound-preview" style="display: none;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -156,7 +171,7 @@
     
     <!-- D3.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
-        
+    
     <!-- Application Scripts - Split into modules -->
     <script src="js/app-state.js"></script>
     <script src="js/audio-processor.js"></script>
@@ -166,6 +181,8 @@
     <script src="js/bottom-wave.js"></script>
     <script src="js/playback-controls.js"></script>
     <script src="js/data-manager.js"></script>
+    <script src="js/custom-waveform.js"></script>
+    <script src="js/sound-upload.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

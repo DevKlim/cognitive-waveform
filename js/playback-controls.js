@@ -274,3 +274,230 @@ function setupTimelineClick() {
         setCurrentTime(ratio * maxTime);
     });
 }
+
+/**
+ * Enhanced Skip Buttons with Hold Feature
+ * This adds press-and-hold functionality to fast forward and rewind buttons
+ */
+
+/**
+ * Initialize the hold-to-skip functionality
+ */
+function initButtonHoldFeature() {
+    // Define the buttons
+    const skipForwardBtn = document.getElementById('skip-forward-btn');
+    const skipBackBtn = document.getElementById('skip-back-btn');
+    
+    if (!skipForwardBtn || !skipBackBtn) return;
+    
+    // Variables to track button press state
+    let forwardInterval = null;
+    let backwardInterval = null;
+    let wasPlaying = false;
+    let skipSpeed = 5; // Initial skip speed multiplier
+    let holdStartTime = 0;
+    const holdThreshold = 500; // ms before we consider it a "hold"
+    
+    // Forward button press and hold
+    skipForwardBtn.addEventListener('mousedown', function(e) {
+      // Remember if we were playing
+      wasPlaying = app.isPlaying;
+      holdStartTime = Date.now();
+      
+      // Initial skip forward
+      skipTime(500);
+      
+      // Set up interval for continuous skipping
+      forwardInterval = setTimeout(function() {
+        // When we've held past the threshold, pause playback
+        if (wasPlaying) stopPlayback();
+        
+        // Now start the continuous skipping
+        forwardInterval = setInterval(function() {
+          // Increase skip speed over time (max 10x)
+          skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
+          
+          // Skip with increasing speed
+          skipTime(1 * skipSpeed);
+          
+          // Update visualization without playing
+          updateWaveform();
+          updateCircularWave();
+        }, 50);
+      }, holdThreshold);
+    });
+    
+    // Forward button release
+    skipForwardBtn.addEventListener('mouseup', function(e) {
+      // Clear the interval
+      clearTimeout(forwardInterval);
+      clearInterval(forwardInterval);
+      forwardInterval = null;
+      
+      // Resume playback if we were playing before
+      if (wasPlaying && !app.isPlaying && (Date.now() - holdStartTime) >= holdThreshold) {
+        togglePlayback();
+      }
+      
+      // Reset skip speed
+      skipSpeed = 1;
+    });
+    
+    // Forward button mouse leave
+    skipForwardBtn.addEventListener('mouseleave', function(e) {
+      // Only handle if the button is being held down
+      if (forwardInterval) {
+        // Clear the interval
+        clearTimeout(forwardInterval);
+        clearInterval(forwardInterval);
+        forwardInterval = null;
+        
+        // Resume playback if we were playing before
+        if (wasPlaying && !app.isPlaying && (Date.now() - holdStartTime) >= holdThreshold) {
+          togglePlayback();
+        }
+        
+        // Reset skip speed
+        skipSpeed = 1;
+      }
+    });
+    
+    // Backward button press and hold
+    skipBackBtn.addEventListener('mousedown', function(e) {
+      // Remember if we were playing
+      wasPlaying = app.isPlaying;
+      holdStartTime = Date.now();
+      
+      // Initial skip backward
+      skipTime(-5);
+      
+      // Set up interval for continuous skipping
+      backwardInterval = setTimeout(function() {
+        // When we've held past the threshold, pause playback
+        if (wasPlaying) stopPlayback();
+        
+        // Now start the continuous skipping
+        backwardInterval = setInterval(function() {
+          // Increase skip speed over time (max 10x)
+          skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
+          
+          // Skip with increasing speed
+          skipTime(-1 * skipSpeed);
+          
+          // Update visualization without playing
+          updateWaveform();
+          updateCircularWave();
+        }, 50);
+      }, holdThreshold);
+    });
+    
+    // Backward button release
+    skipBackBtn.addEventListener('mouseup', function(e) {
+      // Clear the interval
+      clearTimeout(backwardInterval);
+      clearInterval(backwardInterval);
+      backwardInterval = null;
+      
+      // Resume playback if we were playing before
+      if (wasPlaying && !app.isPlaying && (Date.now() - holdStartTime) >= holdThreshold) {
+        togglePlayback();
+      }
+      
+      // Reset skip speed
+      skipSpeed = 1;
+    });
+    
+    // Backward button mouse leave
+    skipBackBtn.addEventListener('mouseleave', function(e) {
+      // Only handle if the button is being held down
+      if (backwardInterval) {
+        // Clear the interval
+        clearTimeout(backwardInterval);
+        clearInterval(backwardInterval);
+        backwardInterval = null;
+        
+        // Resume playback if we were playing before
+        if (wasPlaying && !app.isPlaying && (Date.now() - holdStartTime) >= holdThreshold) {
+          togglePlayback();
+        }
+        
+        // Reset skip speed
+        skipSpeed = 1;
+      }
+    });
+    
+    // Add touch support
+    // Forward button touch events
+    skipForwardBtn.addEventListener('touchstart', function(e) {
+      e.preventDefault(); // Prevent scrolling
+      wasPlaying = app.isPlaying;
+      holdStartTime = Date.now();
+      
+      skipTime(500);
+      
+      forwardInterval = setTimeout(function() {
+        if (wasPlaying) stopPlayback();
+        
+        forwardInterval = setInterval(function() {
+          skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
+          skipTime(1 * skipSpeed);
+          updateWaveform();
+          updateCircularWave();
+        }, 50);
+      }, holdThreshold);
+    });
+    
+    skipForwardBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      clearTimeout(forwardInterval);
+      clearInterval(forwardInterval);
+      forwardInterval = null;
+      
+      if (wasPlaying && !app.isPlaying && (Date.now() - holdStartTime) >= holdThreshold) {
+        togglePlayback();
+      }
+      
+      skipSpeed = 1;
+    });
+    
+    // Backward button touch events
+    skipBackBtn.addEventListener('touchstart', function(e) {
+      e.preventDefault(); // Prevent scrolling
+      wasPlaying = app.isPlaying;
+      holdStartTime = Date.now();
+      
+      skipTime(-500);
+      
+      backwardInterval = setTimeout(function() {
+        if (wasPlaying) stopPlayback();
+        
+        backwardInterval = setInterval(function() {
+          skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
+          skipTime(-1 * skipSpeed);
+          updateWaveform();
+          updateCircularWave();
+        }, 50);
+      }, holdThreshold);
+    });
+    
+    skipBackBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      clearTimeout(backwardInterval);
+      clearInterval(backwardInterval);
+      backwardInterval = null;
+      
+      if (wasPlaying && !app.isPlaying && (Date.now() - holdStartTime) >= holdThreshold) {
+        togglePlayback();
+      }
+      
+      skipSpeed = 1;
+    });
+    
+    console.log('Button hold-to-skip functionality initialized');
+  }
+  
+  // Initialize the feature when the DOM is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    // We'll use a short delay to ensure other components are ready
+    setTimeout(initButtonHoldFeature, 1000);
+  });

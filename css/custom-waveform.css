@@ -1,0 +1,702 @@
+/**
+ * Custom Waveform Interface Styles
+ * Improved visual design and UX for the waveform creator
+ */
+
+/* Sound profile selector */
+.sound-profile-container {
+    margin-top: 15px;
+    padding: 5px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .sound-profile-description {
+    color: #b3b3b3;
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  
+  /* Custom waveform controls */
+  .custom-waveform-controls {
+    margin-top: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .custom-waveform-controls.hidden {
+    display: none;
+  }
+  
+  .custom-waveform-btn {
+    background-color: #1db954;
+    color: #000;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    max-width: 200px;
+  }
+  
+  .custom-waveform-btn:hover {
+    background-color: #1ed760;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(29, 185, 84, 0.3);
+  }
+  
+  /* Audio upload section */
+  .audio-upload-section {
+    margin-top: 10px;
+    transition: all 0.3s ease;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 15px;
+  }
+  
+  .audio-upload-section.hidden {
+    display: none;
+  }
+  
+  .audio-file-input {
+    display: none; /* Hide the default file input */
+  }
+  
+  .custom-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #2e2e2e;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    margin-bottom: 10px;
+    max-width: 200px;
+  }
+  
+  .custom-upload-btn:hover {
+    background-color: #3e3e3e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+  }
+  
+  .audio-details {
+    margin-top: 10px;
+    background-color: #121212;
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+  
+  .audio-file-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #b3b3b3;
+    margin-bottom: 5px;
+  }
+  
+  .play-uploaded-btn {
+    background-color: #1db954;
+    color: #000;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .play-uploaded-btn:hover {
+    transform: scale(1.1);
+    background-color: #1ed760;
+    box-shadow: 0 0 10px rgba(29, 185, 84, 0.4);
+  }
+  
+  /* Waveform drawing interface */
+  .waveform-drawing-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    overflow: auto;
+  }
+  
+  .waveform-modal-content {
+    background-color: #181818;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #333;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 700px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  }
+  
+  .waveform-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .waveform-modal-header h2 {
+    font-size: 24px;
+    color: #fff;
+    margin: 0;
+  }
+  
+  .close-waveform-modal {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  
+  .close-waveform-modal:hover {
+    color: #fff;
+  }
+  
+  .drawing-canvas-container {
+    position: relative;
+    width: 100%;
+    background-color: #121212;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 20px 0;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  }
+  
+  #waveform-drawing-canvas {
+    width: 100%;
+    height: 200px;
+    cursor: crosshair;
+    display: block;
+  }
+  
+  .drawing-guidelines {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 5px 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 4px;
+    font-size: 12px;
+    color: #b3b3b3;
+  }
+  
+  .waveform-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .control-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .waveform-control-btn {
+    background-color: #2e2e2e;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .waveform-control-btn:hover {
+    background-color: #3e3e3e;
+    transform: translateY(-2px);
+  }
+  
+  .waveform-control-btn.primary {
+    background-color: #1db954;
+    color: #000;
+  }
+  
+  .waveform-control-btn.primary:hover {
+    background-color: #1ed760;
+    box-shadow: 0 4px 10px rgba(29, 185, 84, 0.3);
+  }
+  
+  .waveform-control-btn.active {
+    background-color: #1db954;
+    color: #000;
+  }
+  
+  .color-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .color-selector label {
+    font-size: 14px;
+    color: #b3b3b3;
+  }
+  
+  .color-selector input[type="color"] {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+  }
+  
+  .waveform-presets {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+  
+  .preset-button {
+    background-color: #2e2e2e;
+    border: none;
+    color: #b3b3b3;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .preset-button:hover {
+    background-color: #3e3e3e;
+    color: #fff;
+  }
+  
+  .preset-button.active {
+    background-color: #1db954;
+    color: #000;
+  }
+  
+  .waveform-drawing-instructions {
+    margin: 15px 0;
+    padding: 12px;
+    background-color: #121212;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #b3b3b3;
+    line-height: 1.4;
+  }
+  
+  .button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  /* Tab system for the drawing modal */
+  .waveform-tabs {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #333;
+  }
+  
+  .waveform-tab {
+    padding: 10px 20px;
+    background-color: transparent;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+  }
+  
+  .waveform-tab:hover {
+    color: #fff;
+  }
+  
+  .waveform-tab.active {
+    color: #1db954;
+    border-bottom: 2px solid #1db954;
+  }
+  
+  .tab-content {
+    display: none;
+  }
+  
+  .tab-content.active {
+    display: block;
+  }
+  
+  /* Mode toggle switches */
+  .mode-toggles {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .mode-toggle {
+    position: relative;
+    display: inline-block;
+    width: 54px;
+    height: 28px;
+  }
+  
+  .mode-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .mode-toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #2e2e2e;
+    transition: .4s;
+    border-radius: 34px;
+    cursor: pointer;
+  }
+  
+  .mode-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .mode-toggle-slider {
+    background-color: #1db954;
+  }
+  
+  input:checked + .mode-toggle-slider:before {
+    transform: translateX(26px);
+  }
+  
+  .mode-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #b3b3b3;
+    font-size: 14px;
+  }
+  
+  /* Preview section */
+  .waveform-preview {
+    margin-top: 15px;
+    background-color: #121212;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+  }
+  
+  .preview-label {
+    margin-bottom: 10px;
+    color: #b3b3b3;
+    font-size: 14px;
+  }
+  
+  .preview-visualizer {
+    height: 60px;
+    width: 100%;
+    background-color: #0a0a0a;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* Real-time preview animation */
+  .preview-wave {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .waveform-modal-content {
+      width: 95%;
+      margin: 10% auto;
+      padding: 15px;
+    }
+    
+    .control-options {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .waveform-tabs {
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 5px;
+    }
+    
+    .waveform-tab {
+      padding: 8px 12px;
+    }
+  }
+  
+  /* Harmonic sliders */
+  .harmonic-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    padding: 5px;
+    background-color: #1a1a1a;
+    border-radius: 4px;
+  }
+  
+  .harmonic-slider {
+    flex: 1;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #535353;
+    border-radius: 2px;
+    outline: none;
+  }
+  
+  .harmonic-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+  }
+  
+  .harmonic-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+    border: none;
+  }
+  
+  .harmonic-value {
+    min-width: 50px;
+    text-align: right;
+    color: #b3b3b3;
+    font-size: 12px;
+  }
+  
+  #preset-preview-canvas,
+  #harmonics-preview-canvas {
+    width: 100%;
+    height: 200px;
+    display: block;
+  }
+
+  /* Sound upload section */
+.sound-upload-section {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(29, 185, 84, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(29, 185, 84, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .sound-upload-section:hover {
+    background-color: rgba(29, 185, 84, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .sound-upload-header {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #1db954;
+    font-weight: 600;
+  }
+  
+  .sound-upload-description {
+    font-size: 13px;
+    color: #b3b3b3;
+    margin-bottom: 15px;
+    line-height: 1.4;
+  }
+  
+  .sound-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #2e2e2e;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    margin-bottom: 10px;
+    border: none;
+  }
+  
+  .sound-upload-btn:hover {
+    background-color: #1db954;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(29, 185, 84, 0.3);
+  }
+  
+  .sound-preview {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .sound-file-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .sound-file-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e0e0e0;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .sound-file-size {
+    font-size: 12px;
+    color: #b3b3b3;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+  
+  .sound-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .play-sound-btn {
+    background-color: #1db954;
+    color: #000;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  
+  .play-sound-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(29, 185, 84, 0.4);
+  }
+  
+  .sound-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+  }
+  
+  .sound-settings label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #b3b3b3;
+  }
+  
+  .sound-settings input[type="checkbox"] {
+    accent-color: #1db954;
+    width: 16px;
+    height: 16px;
+  }
+  
+  .sound-settings select {
+    background-color: #2e2e2e;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  
+  .sound-settings select:hover {
+    background-color: #3e3e3e;
+  }
+  
+  .sound-settings select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.4);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .sound-controls {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .play-sound-btn {
+      align-self: center;
+      margin-bottom: 10px;
+    }
+    
+    .sound-settings {
+      width: 100%;
+    }
+  }

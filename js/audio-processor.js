@@ -1,6 +1,7 @@
 /**
  * audio-processor.js
- * Enhanced audio processing with expanded sound options and custom waveform support
+ * Enhanced audio processing with expanded sound options, custom waveform support,
+ * and custom audio upload capabilities
  */
 
 // Available waveform types
@@ -9,7 +10,8 @@ const WAVEFORM_TYPES = {
     TRIANGLE: 'triangle',
     SQUARE: 'square',
     SAWTOOTH: 'sawtooth',
-    CUSTOM: 'custom'
+    CUSTOM: 'custom',
+    CUSTOM_AUDIO: 'custom_audio'
 };
 
 // Sound profiles for different data visualization scenarios
@@ -18,73 +20,37 @@ const SOUND_PROFILES = [
         id: 'sine',
         name: 'Sine',
         waveform: WAVEFORM_TYPES.SINE,
-        frequencyRange: { min: 100, max: 800 }
+        frequencyRange: { min: 50, max: 2500 }
     },
     {
         id: 'triangle',
         name: 'Triangle',
         waveform: WAVEFORM_TYPES.TRIANGLE,
-        frequencyRange: { min: 80, max: 700 }
+        frequencyRange: { min: 50, max: 2500 }
     },
     {
         id: 'square', 
         name: 'Square',
         waveform: WAVEFORM_TYPES.SQUARE,
-        frequencyRange: { min: 60, max: 600 }
+        frequencyRange: { min: 50, max: 2500 }
     },
     {
         id: 'sawtooth',
         name: 'Sawtooth',
         waveform: WAVEFORM_TYPES.SAWTOOTH,
-        frequencyRange: { min: 90, max: 750 }
-    },
-    {
-        id: 'heart_tone',
-        name: 'Heart Tone',
-        waveform: WAVEFORM_TYPES.SINE,
-        frequencyRange: { min: 120, max: 400 },
-        customSettings: {
-            pulseEffect: true,
-            pulseSpeed: 0.8
-        }
-    },
-    {
-        id: 'neural',
-        name: 'Neural',
-        waveform: WAVEFORM_TYPES.SAWTOOTH,
-        frequencyRange: { min: 200, max: 1200 }
-    },
-    {
-        id: 'respiratory',
-        name: 'Respiratory',
-        waveform: WAVEFORM_TYPES.TRIANGLE,
-        frequencyRange: { min: 60, max: 300 },
-        customSettings: {
-            pulseEffect: true,
-            pulseSpeed: 0.5
-        }
-    },
-    {
-        id: 'stress',
-        name: 'Stress',
-        waveform: WAVEFORM_TYPES.SQUARE,
-        frequencyRange: { min: 150, max: 900 }
-    },
-    {
-        id: 'ambient',
-        name: 'Ambient',
-        waveform: WAVEFORM_TYPES.SINE,
-        frequencyRange: { min: 200, max: 1000 },
-        customSettings: {
-            pulseEffect: true,
-            pulseSpeed: 0.3
-        }
+        frequencyRange: { min: 50, max: 2500 }
     },
     {
         id: 'custom_wave',
-        name: 'Custom',
+        name: 'Custom Waveform',
         waveform: WAVEFORM_TYPES.CUSTOM,
-        frequencyRange: { min: 100, max: 800 }
+        frequencyRange: { min: 50, max: 2500 }
+    },
+    {
+        id: 'custom_audio',
+        name: 'Custom Audio',
+        waveform: WAVEFORM_TYPES.CUSTOM_AUDIO,
+        frequencyRange: { min: 0.5, max: 2.0 } // Playback rate range for audio files
     }
 ];
 
@@ -136,7 +102,6 @@ function initCustomWaveform() {
     if (!audioContext) return;
     
     // Create a custom waveform (example of a custom shape)
-    const sampleRate = audioContext.sampleRate;
     const harmonics = 8; // Number of harmonics to include
     customWaveform = audioContext.createPeriodicWave(
         // Cosine terms (real)
@@ -178,18 +143,43 @@ function initSoundProfileSelector() {
             currentSoundProfile = selectedProfile;
             
             // Update oscillator if it's running
-            if (oscillator) {
+            if (oscillator && app.isPlaying) {
                 updateOscillatorType();
+            }
+            
+            // Stop custom audio playback if switching away from custom audio
+            if (selectedProfileId !== 'custom_audio' && window.customAudio && !window.customAudio.paused) {
+                window.customAudio.pause();
+                
+                // Update play button if available
+                const playButton = document.getElementById('play-sound-preview');
+                if (playButton) {
+                    playButton.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    `;
+                }
+            }
+            
+            // Start regular sonification if switching to a standard waveform
+            if (selectedProfileId !== 'custom_audio' && app.isPlaying && !oscillator) {
+                startSonification();
             }
             
             console.log(`Sound profile changed to: ${currentSoundProfile.name}`);
         }
         
-        // If selected custom, show custom controls
-        if (selectedProfileId === 'custom_wave') {
-            showCustomWaveformControls();
-        } else {
-            hideCustomWaveformControls();
+        // Show/hide custom waveform controls
+        const customWaveformControls = document.getElementById('custom-waveform-controls');
+        if (customWaveformControls) {
+            customWaveformControls.classList.toggle('hidden', selectedProfileId !== 'custom_wave');
+        }
+        
+        // Show/hide custom audio controls
+        const soundUploadSection = document.getElementById('sound-upload-section');
+        if (soundUploadSection) {
+            soundUploadSection.style.display = selectedProfileId === 'custom_audio' ? 'block' : 'none';
         }
     });
     
@@ -203,156 +193,185 @@ function initSoundProfileSelector() {
     container.appendChild(label);
     container.appendChild(dropdown);
     
-    // Add custom waveform controls section (initially hidden)
-    const customControls = document.createElement('div');
-    customControls.id = 'custom-waveform-controls';
-    customControls.className = 'custom-waveform-controls hidden';
+    // Create custom waveform controls
+    createCustomWaveformControls(container);
+}
+
+/**
+ * Create custom waveform controls
+ */
+function createCustomWaveformControls(container) {
+    // Create controls container
+    const controlsContainer = document.createElement('div');
+    controlsContainer.id = 'custom-waveform-controls';
+    controlsContainer.className = 'custom-waveform-controls hidden';
     
-    // Add custom waveform editor button
+    // Create description
+    const description = document.createElement('div');
+    description.className = 'sound-profile-description';
+    description.textContent = 'Draw a custom waveform or upload audio to visualize your data with unique sounds';
+    
+    // Create waveform editor button
     const editorButton = document.createElement('button');
-    editorButton.textContent = 'Edit Custom Waveform';
+    editorButton.id = 'open-waveform-editor';
     editorButton.className = 'custom-waveform-btn';
-    editorButton.addEventListener('click', openCustomWaveformEditor);
+    editorButton.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        </svg>
+        Create Waveform
+    `;
+    editorButton.addEventListener('click', openWaveformEditor);
     
-    customControls.appendChild(editorButton);
-    container.appendChild(customControls);
+    // Create audio upload button 
+    const uploadButton = document.createElement('button');
+    uploadButton.id = 'open-audio-upload';
+    uploadButton.className = 'custom-waveform-btn';
+    uploadButton.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+        </svg>
+        Upload Audio
+    `;
+    uploadButton.addEventListener('click', openAudioUpload);
+    
+    // Add elements to container
+    controlsContainer.appendChild(description);
+    controlsContainer.appendChild(editorButton);
+    controlsContainer.appendChild(uploadButton);
+    
+    // Add to container
+    container.appendChild(controlsContainer);
 }
 
 /**
- * Show custom waveform controls
+ * Open audio upload interface
  */
-function showCustomWaveformControls() {
-    const controls = document.getElementById('custom-waveform-controls');
-    if (controls) {
-        controls.classList.remove('hidden');
+function openAudioUpload() {
+    // Select custom audio option in the dropdown
+    const dropdown = document.getElementById('sound-profile-dropdown');
+    if (dropdown) {
+        dropdown.value = 'custom_audio';
+        dropdown.dispatchEvent(new Event('change'));
     }
 }
 
 /**
- * Hide custom waveform controls
+ * Open waveform editor modal
  */
-function hideCustomWaveformControls() {
-    const controls = document.getElementById('custom-waveform-controls');
-    if (controls) {
-        controls.classList.add('hidden');
+function openWaveformEditor() {
+    // Check if custom-waveform.js is loaded
+    if (typeof createWaveformDrawingModal === 'function') {
+        // Use the function from custom-waveform.js
+        let modal = document.getElementById('waveform-drawing-modal');
+        if (!modal) {
+            console.log('Creating waveform modal...');
+            createWaveformDrawingModal();
+            modal = document.getElementById('waveform-drawing-modal');
+        }
+        
+        if (modal) {
+            console.log('Opening waveform modal');
+            modal.style.display = 'block';
+            
+            // Initialize the active tab
+            setTimeout(() => {
+                if (typeof initDrawingCanvas === 'function') {
+                    initDrawingCanvas();
+                }
+                console.log('Drawing canvas initialized');
+            }, 100);
+        } else {
+            console.error('Modal element not found after creation attempt');
+        }
+    } else {
+        // Fallback implementation if custom-waveform.js is not loaded
+        console.log('custom-waveform.js not loaded, using fallback implementation');
+        createFallbackWaveformModal();
     }
 }
 
 /**
- * Open custom waveform editor modal
+ * Create a fallback waveform modal (simplified version)
  */
-function openCustomWaveformEditor() {
-    // Create modal if it doesn't exist
-    let modal = document.getElementById('waveform-editor-modal');
+function createFallbackWaveformModal() {
+    let modal = document.getElementById('waveform-drawing-modal');
     
     if (!modal) {
         modal = document.createElement('div');
-        modal.id = 'waveform-editor-modal';
-        modal.className = 'modal';
+        modal.id = 'waveform-drawing-modal';
+        modal.className = 'waveform-drawing-modal';
         
         // Create modal content
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
-        
-        // Add header
-        const header = document.createElement('div');
-        header.className = 'modal-header';
-        header.innerHTML = `
-            <h2>Custom Waveform Editor</h2>
-            <span class="close-modal">&times;</span>
-        `;
-        modalContent.appendChild(header);
-        
-        // Add canvas for waveform drawing
-        const canvasContainer = document.createElement('div');
-        canvasContainer.className = 'waveform-canvas-container';
-        
-        const canvas = document.createElement('canvas');
-        canvas.id = 'waveform-canvas';
-        canvas.width = 500;
-        canvas.height = 200;
-        canvasContainer.appendChild(canvas);
-        modalContent.appendChild(canvasContainer);
-        
-        // Add controls
-        const controls = document.createElement('div');
-        controls.className = 'waveform-controls';
-        controls.innerHTML = `
-            <div class="control-group">
-                <label>Waveform Presets:</label>
-                <select id="waveform-preset">
-                    <option value="sine">Sine</option>
-                    <option value="triangle">Triangle</option>
-                    <option value="square">Square</option>
-                    <option value="sawtooth">Sawtooth</option>
-                    <option value="custom">Custom Draw</option>
-                </select>
-            </div>
-            <div class="harmonics-controls">
-                <label>Harmonic Amplitude:</label>
-                <div id="harmonics-sliders"></div>
-            </div>
-            <div class="button-group">
-                <button id="apply-waveform">Apply</button>
-                <button id="cancel-waveform">Cancel</button>
+        modal.innerHTML = `
+            <div class="waveform-modal-content">
+                <div class="waveform-modal-header">
+                    <h2>Create Custom Waveform</h2>
+                    <button class="close-waveform-modal">&times;</button>
+                </div>
+                
+                <div class="drawing-canvas-container">
+                    <canvas id="waveform-drawing-canvas" width="600" height="200"></canvas>
+                </div>
+                
+                <div class="control-options">
+                    <button id="clear-canvas" class="waveform-control-btn">Clear</button>
+                    <button id="smooth-wave" class="waveform-control-btn">Smooth</button>
+                    <div class="color-selector">
+                        <label>Color:</label>
+                        <input type="color" id="wave-color" value="#1db954">
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="apply-waveform" class="waveform-control-btn primary">Apply Waveform</button>
+                    <button id="cancel-waveform" class="waveform-control-btn">Cancel</button>
+                </div>
             </div>
         `;
-        modalContent.appendChild(controls);
         
-        // Add modal to document
-        modal.appendChild(modalContent);
+        // Add to document
         document.body.appendChild(modal);
         
-        // Set up event listeners
-        const closeBtn = modal.querySelector('.close-modal');
+        // Add event listeners
+        const closeBtn = modal.querySelector('.close-waveform-modal');
         closeBtn.addEventListener('click', () => {
             modal.style.display = 'none';
         });
         
-        const presetSelect = document.getElementById('waveform-preset');
-        presetSelect.addEventListener('change', function() {
-            updateWaveformCanvas(this.value);
+        const clearBtn = document.getElementById('clear-canvas');
+        clearBtn.addEventListener('click', () => {
+            const canvas = document.getElementById('waveform-drawing-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#121212';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw center line
+                ctx.strokeStyle = '#333333';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height / 2);
+                ctx.lineTo(canvas.width, canvas.height / 2);
+                ctx.stroke();
+            }
         });
         
-        // Generate harmonic sliders
-        const harmonicsContainer = document.getElementById('harmonics-sliders');
-        const numHarmonics = 8;
-        for (let i = 1; i <= numHarmonics; i++) {
-            const sliderContainer = document.createElement('div');
-            sliderContainer.className = 'harmonic-slider-container';
-            
-            const label = document.createElement('label');
-            label.textContent = `H${i}:`;
-            sliderContainer.appendChild(label);
-            
-            const slider = document.createElement('input');
-            slider.type = 'range';
-            slider.min = '0';
-            slider.max = '100';
-            slider.value = i === 1 ? '100' : Math.floor(100 / i);
-            slider.className = 'harmonic-slider';
-            slider.dataset.harmonic = i;
-            slider.addEventListener('input', updateCustomWaveform);
-            sliderContainer.appendChild(slider);
-            
-            harmonicsContainer.appendChild(sliderContainer);
-        }
-        
-        // Apply button
         const applyBtn = document.getElementById('apply-waveform');
         applyBtn.addEventListener('click', () => {
-            applyCustomWaveform();
+            // Apply waveform logic would go here
             modal.style.display = 'none';
         });
         
-        // Cancel button
         const cancelBtn = document.getElementById('cancel-waveform');
         cancelBtn.addEventListener('click', () => {
             modal.style.display = 'none';
         });
         
         // Initialize canvas
-        updateWaveformCanvas('sine');
+        setTimeout(() => {
+            initFallbackCanvas();
+        }, 100);
     }
     
     // Show modal
@@ -360,147 +379,79 @@ function openCustomWaveformEditor() {
 }
 
 /**
- * Update waveform canvas with selected preset
+ * Initialize fallback canvas
  */
-function updateWaveformCanvas(presetType) {
-    const canvas = document.getElementById('waveform-canvas');
-    if (!canvas) return;
+function initFallbackCanvas() {
+    const canvas = document.getElementById('waveform-drawing-canvas');
+    if (!canvas) {
+        console.error('Drawing canvas not found');
+        return;
+    }
     
     const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
     
     // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Draw background
-    ctx.fillStyle = '#1e1e1e';
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Draw center line
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.strokeStyle = '#333';
-    ctx.moveTo(0, height/2);
-    ctx.lineTo(width, height/2);
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
     ctx.stroke();
     
-    // Draw waveform
-    ctx.beginPath();
-    ctx.strokeStyle = '#1db954';
-    ctx.lineWidth = 2;
+    // Set up drawing state
+    window.drawingState = {
+        isDrawing: false,
+        path: [],
+        color: '#1db954',
+        ctx: ctx
+    };
     
-    // Different wave patterns for different presets
-    for (let x = 0; x < width; x++) {
-        const normalizedX = x / width * 2 * Math.PI;
-        let y;
-        
-        switch (presetType) {
-            case 'sine':
-                y = Math.sin(normalizedX * 5);
-                break;
-            case 'triangle':
-                y = Math.asin(Math.sin(normalizedX * 5)) * 2 / Math.PI;
-                break;
-            case 'square':
-                y = Math.sign(Math.sin(normalizedX * 5));
-                break;
-            case 'sawtooth':
-                y = (normalizedX * 5 % (2 * Math.PI)) / Math.PI - 1;
-                break;
-            case 'custom':
-                // Use custom waveform from sliders
-                y = getCustomWaveformValue(normalizedX);
-                break;
-            default:
-                y = Math.sin(normalizedX * 5);
-        }
-        
-        // Scale and position
-        const scaledY = height/2 - (y * height/3);
-        
-        if (x === 0) {
-            ctx.moveTo(x, scaledY);
-        } else {
-            ctx.lineTo(x, scaledY);
-        }
-    }
+    // Set drawing style
+    ctx.strokeStyle = window.drawingState.color;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     
-    ctx.stroke();
-    
-    // Update harmonics sliders visibility for custom preset
-    const harmonicsControls = document.querySelector('.harmonics-controls');
-    if (harmonicsControls) {
-        harmonicsControls.style.display = presetType === 'custom' ? 'block' : 'none';
-    }
-}
-
-/**
- * Calculate custom waveform value from harmonic sliders
- */
-function getCustomWaveformValue(x) {
-    const sliders = document.querySelectorAll('.harmonic-slider');
-    let sum = 0;
-    
-    sliders.forEach(slider => {
-        const harmonic = parseInt(slider.dataset.harmonic);
-        const amplitude = parseInt(slider.value) / 100;
+    // Add event listeners
+    canvas.addEventListener('mousedown', (e) => {
+        window.drawingState.isDrawing = true;
         
-        // Add this harmonic's contribution
-        sum += amplitude * Math.sin(x * harmonic);
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        window.drawingState.path = [{x, y}];
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
     });
     
-    // Normalize to -1 to 1 range
-    return sum / sliders.length;
-}
-
-/**
- * Update custom waveform preview when sliders change
- */
-function updateCustomWaveform() {
-    if (document.getElementById('waveform-preset').value === 'custom') {
-        updateWaveformCanvas('custom');
-    }
-}
-
-/**
- * Apply custom waveform to audio
- */
-function applyCustomWaveform() {
-    if (!audioContext) return;
-    
-    // Get sliders
-    const sliders = document.querySelectorAll('.harmonic-slider');
-    
-    // Create arrays for periodic wave
-    const harmonics = sliders.length;
-    const real = new Float32Array(harmonics + 1); // +1 for DC offset (always 0)
-    const imag = new Float32Array(harmonics + 1);
-    
-    // DC offset is always 0
-    real[0] = 0;
-    imag[0] = 0;
-    
-    // Set values from sliders
-    sliders.forEach(slider => {
-        const harmonic = parseInt(slider.dataset.harmonic);
-        const amplitude = parseInt(slider.value) / 100;
+    canvas.addEventListener('mousemove', (e) => {
+        if (!window.drawingState.isDrawing) return;
         
-        // For sine wave components
-        imag[harmonic] = amplitude;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        window.drawingState.path.push({x, y});
+        
+        ctx.lineTo(x, y);
+        ctx.stroke();
     });
     
-    // Create custom periodic wave
-    try {
-        customWaveform = audioContext.createPeriodicWave(real, imag);
-        console.log('Custom waveform created successfully');
-        
-        // Update oscillator if it's running
-        if (oscillator && currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM) {
-            oscillator.setPeriodicWave(customWaveform);
-        }
-    } catch (e) {
-        console.error('Error creating custom waveform:', e);
-    }
+    canvas.addEventListener('mouseup', () => {
+        window.drawingState.isDrawing = false;
+    });
+    
+    canvas.addEventListener('mouseout', () => {
+        window.drawingState.isDrawing = false;
+    });
 }
 
 /**
@@ -512,6 +463,14 @@ function updateOscillatorType() {
     try {
         if (currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM && customWaveform) {
             oscillator.setPeriodicWave(customWaveform);
+        } else if (currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM_AUDIO) {
+            // For custom audio, we'll stop the oscillator and use the audio element instead
+            stopSonification();
+            
+            // If we have a custom audio loaded and we're playing, start it
+            if (window.customAudio && app.isPlaying) {
+                window.customAudio.play();
+            }
         } else {
             oscillator.type = currentSoundProfile.waveform;
         }
@@ -529,7 +488,31 @@ function startSonification() {
     if (!audioContext) return; // Exit if audio context creation failed
     
     try {
-        // Create oscillator if not exists
+        // If we're using custom audio, play that instead
+        if (currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM_AUDIO) {
+            if (window.customAudio) {
+                window.customAudio.play()
+                    .then(() => {
+                        console.log('Custom audio playback started');
+                        
+                        // Update play button if available
+                        const playButton = document.getElementById('play-sound-preview');
+                        if (playButton) {
+                            playButton.innerHTML = `
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                </svg>
+                            `;
+                        }
+                    })
+                    .catch(e => {
+                        console.error('Error playing custom audio:', e);
+                    });
+            }
+            return;
+        }
+        
+        // For standard and custom waveforms, create oscillator if not exists
         if (!oscillator) {
             oscillator = audioContext.createOscillator();
             
@@ -553,15 +536,32 @@ function startSonification() {
  * Stop sonification
  */
 function stopSonification() {
+    // Stop oscillator-based sonification
     if (oscillator) {
         try {
             oscillator.stop();
             oscillator.disconnect();
             oscillator = null;
-            console.log('Sonification stopped');
+            console.log('Oscillator sonification stopped');
         } catch (e) {
-            console.error('Error stopping sonification:', e);
+            console.error('Error stopping oscillator sonification:', e);
             oscillator = null;
+        }
+    }
+    
+    // Also pause custom audio if it's playing
+    if (window.customAudio && !window.customAudio.paused) {
+        window.customAudio.pause();
+        console.log('Custom audio playback paused');
+        
+        // Update play button if available
+        const playButton = document.getElementById('play-sound-preview');
+        if (playButton) {
+            playButton.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+            `;
         }
     }
 }
@@ -570,8 +570,6 @@ function stopSonification() {
  * Update sonification based on current value with enhanced behavior for physiological data
  */
 function updateSonification() {
-    if (!oscillator) return;
-    
     try {
         // Get current value
         const currentValue = getCurrentValue();
@@ -581,59 +579,211 @@ function updateSonification() {
         const minValue = d3.min(app.data.filtered, valueGetter) * 0.9;
         const maxValue = d3.max(app.data.filtered, valueGetter) * 1.1;
         
-        // Check if we're dealing with heart rate or similar cardiac data
-        const isCardiacData = app.currentMetric && 
-            (app.currentMetric.toLowerCase().includes('hr') || 
-             app.currentMetric.toLowerCase().includes('heart') ||
-             app.currentMetric.toLowerCase().includes('ecg'));
-        
-        // Adjust frequency range based on data type and selected profile
-        const { min: minFrequency, max: maxFrequency } = currentSoundProfile.frequencyRange;
-        
-        // Normalize the value
+        // Normalize the value between 0-1
         const normalizedValue = (currentValue - minValue) / (maxValue - minValue || 1);
         
-        // Calculate base frequency
-        const baseFrequency = minFrequency + normalizedValue * (maxFrequency - minFrequency);
-        
-        // Add pulse modulation for cardiac data if profile supports it
-        let frequency = baseFrequency;
-        const hasPulseEffect = currentSoundProfile.customSettings && currentSoundProfile.customSettings.pulseEffect;
-        
-        if ((isCardiacData || hasPulseEffect)) {
-            // Get rate of change for pulse effect
-            const timeStep = app.data.filtered.length > 1
-                ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp)
-                : 10;
-            
-            const currentIndex = Math.floor(app.currentTime / timeStep);
-            const prevIndex = Math.max(0, currentIndex - 1);
-            
-            if (currentIndex > 0 && currentIndex < app.data.filtered.length) {
-                const prevValue = app.data.filtered[prevIndex][app.currentMetric] || 0;
-                const rateOfChange = (currentValue - prevValue) / Math.max(0.1, prevValue);
-                
-                // Add pulse modulation based on rate of change
-                const pulseSpeed = currentSoundProfile.customSettings?.pulseSpeed || 0.3;
-                const pulseModulation = 1 + (Math.max(0, rateOfChange) * pulseSpeed);
-                frequency *= pulseModulation;
-            }
+        // Handle custom audio playback if that's the current profile
+        if (currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM_AUDIO) {
+            updateCustomAudioPlayback(normalizedValue);
+        } 
+        // Handle oscillator if it's active
+        else if (oscillator) {
+            updateOscillatorFrequency(normalizedValue, currentValue);
         }
         
-        // Update oscillator frequency with smoothing
-        oscillator.frequency.setTargetAtTime(frequency, audioContext.currentTime, 0.05);
+        // Get audio data for visualizations from the appropriate source
+        updateVisualizationData();
         
-        // Get audio data for visualizations
-        if (analyser) {
-            analyser.getByteFrequencyData(audioDataArray);
-            
-            // Update visualizations that react to audio
-            updateCircularWave();
-            
-            // Also update bottom wave which now handles audio reactivity
-            // The wave animation function handles this internally via requestAnimationFrame
-        }
     } catch (e) {
         console.error('Error updating sonification:', e);
+    }
+}
+
+/**
+ * Update custom audio playback rate based on data
+ */
+function updateCustomAudioPlayback(normalizedValue) {
+    if (!window.customAudio || window.customAudio.paused) return;
+    
+    try {
+        // Get pitch range settings
+        const pitchRange = window.pitchSettings ? 
+            window.pitchSettings[window.pitchSettings.range] : 
+            currentSoundProfile.frequencyRange;
+        
+        // Calculate playback rate
+        const targetRate = pitchRange.min + normalizedValue * (pitchRange.max - pitchRange.min);
+        
+        // Apply with smoothing
+        if (window.customAudio.playbackRate !== targetRate) {
+            const currentRate = window.customAudio.playbackRate;
+            const smoothFactor = 0.1; // Adjust for smoother/faster transitions
+            
+            window.customAudio.playbackRate = currentRate + (targetRate - currentRate) * smoothFactor;
+        }
+    } catch (e) {
+        console.error('Error updating custom audio playback:', e);
+    }
+}
+
+/**
+ * Update oscillator frequency based on data
+ */
+function updateOscillatorFrequency(normalizedValue, currentValue) {
+    // Check if we're dealing with heart rate or similar cardiac data
+    const isCardiacData = app.currentMetric && 
+        (app.currentMetric.toLowerCase().includes('hr') || 
+         app.currentMetric.toLowerCase().includes('heart') ||
+         app.currentMetric.toLowerCase().includes('ecg'));
+    
+    // Adjust frequency range based on data type and selected profile
+    const { min: minFrequency, max: maxFrequency } = currentSoundProfile.frequencyRange;
+    
+    // Calculate base frequency
+    const baseFrequency = minFrequency + normalizedValue * (maxFrequency - minFrequency);
+    
+    // Add pulse modulation for cardiac data if profile supports it
+    let frequency = baseFrequency;
+    const hasPulseEffect = currentSoundProfile.customSettings && currentSoundProfile.customSettings.pulseEffect;
+    
+    if ((isCardiacData || hasPulseEffect)) {
+        // Get rate of change for pulse effect
+        const timeStep = app.data.filtered.length > 1
+            ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp)
+            : 10;
+        
+        const currentIndex = Math.floor(app.currentTime / timeStep);
+        const prevIndex = Math.max(0, currentIndex - 1);
+        
+        if (currentIndex > 0 && currentIndex < app.data.filtered.length) {
+            const prevValue = app.data.filtered[prevIndex][app.currentMetric] || 0;
+            const rateOfChange = (currentValue - prevValue) / Math.max(0.1, prevValue);
+            
+            // Add pulse modulation based on rate of change
+            const pulseSpeed = currentSoundProfile.customSettings?.pulseSpeed || 0.3;
+            const pulseModulation = 1 + (Math.max(0, rateOfChange) * pulseSpeed);
+            frequency *= pulseModulation;
+        }
+    }
+    
+    // Update oscillator frequency with smoothing
+    oscillator.frequency.setTargetAtTime(frequency, audioContext.currentTime, 0.05);
+}
+
+/**
+ * Update visualization data from appropriate audio source
+ */
+function updateVisualizationData() {
+    if (window.customAudioAnalyzer && window.customAudioDataArray && 
+        currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM_AUDIO) {
+        // Get data from custom audio analyzer
+        window.customAudioAnalyzer.getByteFrequencyData(window.customAudioDataArray);
+        
+        // Use this data for visualizations
+        if (typeof updateCircularWave === 'function') {
+            updateCircularWave();
+        }
+    } else if (analyser && audioDataArray) {
+        // Get data from standard analyzer
+        analyser.getByteFrequencyData(audioDataArray);
+        
+        // Update visualizations that react to audio
+        if (typeof updateCircularWave === 'function') {
+            updateCircularWave();
+        }
+    }
+}
+
+/**
+ * Apply a custom drawn waveform
+ */
+function applyCustomWaveform(drawnPath, canvas) {
+    if (!audioContext) return;
+    
+    try {
+        // Get the center of the canvas
+        const centerY = canvas.height / 2;
+        
+        // Create a sampled waveform (64 points)
+        const samples = 64;
+        const waveform = new Float32Array(samples);
+        
+        // Sort by x position
+        const sortedPath = [...drawnPath].sort((a, b) => a.x - b.x);
+        
+        // Sample at regular intervals
+        for (let i = 0; i < samples; i++) {
+            const x = i / samples * canvas.width;
+            
+            // Find closest points
+            let leftIdx = 0;
+            let rightIdx = sortedPath.length - 1;
+            
+            for (let j = 0; j < sortedPath.length - 1; j++) {
+                if (sortedPath[j].x <= x && sortedPath[j + 1].x >= x) {
+                    leftIdx = j;
+                    rightIdx = j + 1;
+                    break;
+                }
+            }
+            
+            // Interpolate
+            const leftPoint = sortedPath[leftIdx];
+            const rightPoint = sortedPath[rightIdx];
+            
+            let y;
+            if (rightPoint.x === leftPoint.x) {
+                y = leftPoint.y;
+            } else {
+                const t = (x - leftPoint.x) / (rightPoint.x - leftPoint.x);
+                y = leftPoint.y + t * (rightPoint.y - leftPoint.y);
+            }
+            
+            // Normalize to -1 to 1 (invert because canvas y increases downward)
+            waveform[i] = -(y - centerY) / (centerY * 0.8);
+        }
+        
+        // Create arrays for the periodic wave
+        const real = new Float32Array(samples);
+        const imag = new Float32Array(samples);
+        
+        // Simple DFT calculation
+        for (let k = 0; k < samples; k++) {
+            real[k] = 0;
+            imag[k] = 0;
+            
+            for (let n = 0; n < samples; n++) {
+                const phi = (2 * Math.PI * k * n) / samples;
+                real[k] += waveform[n] * Math.cos(phi);
+                imag[k] -= waveform[n] * Math.sin(phi);
+            }
+            
+            real[k] /= samples;
+            imag[k] /= samples;
+        }
+        
+        // Create PeriodicWave
+        customWaveform = audioContext.createPeriodicWave(real, imag);
+        
+        // Update sound profile dropdown
+        const dropdown = document.getElementById('sound-profile-dropdown');
+        if (dropdown) {
+            dropdown.value = 'custom_wave';
+            currentSoundProfile = SOUND_PROFILES.find(p => p.id === 'custom_wave');
+            
+            // Update oscillator if it's running
+            if (oscillator && app.isPlaying) {
+                oscillator.setPeriodicWave(customWaveform);
+            }
+            
+            // Make sure the dropdown change event is triggered
+            dropdown.dispatchEvent(new Event('change'));
+        }
+        
+        console.log('Custom waveform applied');
+        return true;
+    } catch (e) {
+        console.error('Error applying custom waveform:', e);
+        return false;
     }
 }

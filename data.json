@@ -1,19 +1,41 @@
 {
-    "files": [
-      {
-        "name": "driving_clean_data.csv",
-        "path": "data/driving_clean_data.csv",
-        "displayName": "Driving Clean Data"
-      },
-      {
-        "name": "exam_dataset.csv",
-        "path": "data/exam_dataset.csv",
-        "displayName": "Exam Dataset"
-      },
-      {
-        "name": "exam_dataset_10s.csv",
-        "path": "data/exam_dataset_10s.csv",
-        "displayName": "Exam Dataset (10s)"
-      }
-    ]
+  "files": [
+    {
+      "name": "driving_clean_data.csv",
+      "path": "data/driving_clean_data.csv",
+      "displayName": "Driving Dataset"
+    },
+    {
+      "name": "exam_dataset.csv",
+      "path": "data/exam_dataset.csv",
+      "displayName": "Exam Dataset"
+    },
+    {
+      "name": "exam_dataset_10s.csv",
+      "path": "data/exam_dataset_10s.csv",
+      "displayName": "Exam Dataset (10s)"
+    }
+  ],
+  "config": {
+    "colors": {
+      "primary": "#1db954",
+      "secondary": "#4a90e2",
+      "background": "#121212",
+      "surface": "#181818"
+    },
+    "metrics": {
+      "HR": "Heart Rate",
+      "GSR": "Galvanic Skin Response",
+      "EMG": "Electromyography",
+      "RESP": "Respiration",
+      "hr": "Heart Rate",
+      "temp": "Temperature"
+    },
+    "subjectPattern": "Student",
+    "subjects": {
+      "Student88": "Top Student"
+    },
+    "defaultAverageSubject": true,
+    "averageSubjectName": "Average (All Subjects)"
   }
+}

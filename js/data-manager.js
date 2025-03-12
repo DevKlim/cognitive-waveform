@@ -4,17 +4,55 @@
  */
 
 /**
- * Load available datasets for sidebar
+ * Load available datasets from the JSON configuration
  */
 function loadDatasets() {
-    // Default datasets - in a real app, you'd fetch this dynamically
-    app.allDatasets = [
-        { name: 'Driving Clean Data', path: 'data/driving_clean_data.csv', color: 'hsl(0, 80%, 50%)' },
-        { name: 'Exam Dataset', path: 'data/exam_dataset.csv', color: 'hsl(120, 80%, 50%)' },
-        { name: 'Exam Dataset (10s)', path: 'data/exam_dataset_10s.csv', color: 'hsl(240, 80%, 50%)' }
-    ];
-    
-    updateSidebar();
+    try {
+        // Check if datasets are already defined in app.allDatasets
+        if (!app.allDatasets || app.allDatasets.length === 0) {
+            // Default datasets from the JSON file
+            fetch('data.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Map the files to the format we need
+                    app.allDatasets = data.files.map(file => ({
+                        name: file.displayName || file.name,
+                        path: file.path,
+                        // Generate color based on name for consistency
+                        color: generateColorFromString(file.name)
+                    }));
+                    updateSidebar();
+                })
+                .catch(error => {
+                    console.error('Error loading datasets from JSON:', error);
+                    // Fallback to hardcoded datasets
+                    app.allDatasets = [
+                        { name: 'Driving Clean Data', path: 'data/driving_clean_data.csv', color: 'hsl(0, 80%, 50%)' },
+                        { name: 'Exam Dataset', path: 'data/exam_dataset.csv', color: 'hsl(120, 80%, 50%)' },
+                        { name: 'Exam Dataset (10s)', path: 'data/exam_dataset_10s.csv', color: 'hsl(240, 80%, 50%)' }
+                    ];
+                    updateSidebar();
+                });
+        } else {
+            updateSidebar();
+        }
+    } catch (error) {
+        console.error('Error in loadDatasets:', error);
+    }
+}
+
+/**
+ * Generate a consistent color from a string
+ */
+function generateColorFromString(str) {
+    // Simple hash function
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    // Convert to HSL color (better for visualization than RGB)
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 80%, 50%)`;
 }
 
 /**
@@ -260,7 +298,7 @@ function processData(data, displayName) {
     console.log(`Generated ${averagedData.length} averaged data points`);
     
     // Combine regular data with averaged data
-    const combinedData = [...parsedData, ...averagedData];
+    const combinedData = [...averagedData, ...parsedData];
     
     // Save to global state
     app.data.all = combinedData;
@@ -269,15 +307,25 @@ function processData(data, displayName) {
 
     console.log(`Found ${numericColumns.length} metrics:`, numericColumns);
 
-    // Get unique subjects (including the average)
-    const subjects = [...new Set(combinedData.map(d => d.subject))];
+    // Get all subjects (including the average)
+    let subjects = [...new Set(combinedData.map(d => d.subject))];
     
+    // Move "Average (All Subjects)" to the first position if it exists
+    const avgIndex = subjects.indexOf("Average (All Subjects)");
+    if (avgIndex > -1) {
+        subjects = ["Average (All Subjects)", ...subjects.slice(0, avgIndex), ...subjects.slice(avgIndex + 1)];
+    }
+
     // Update UI using newer dropdown approach
     updateMetricDropdown(numericColumns);
     updateSubjectDropdown(subjects);
     
-    // Default selection
-    if (subjects.length > 0) {
+    // Default selection - always use Average (All Subjects) when available
+    if (subjects.includes("Average (All Subjects)")) {
+        app.currentSubject = "Average (All Subjects)";
+        const currentSubject = document.getElementById('current-subject');
+        if (currentSubject) currentSubject.textContent = "Average (All Subjects)";
+    } else if (subjects.length > 0) {
         app.currentSubject = subjects[0];
         const currentSubject = document.getElementById('current-subject');
         if (currentSubject) currentSubject.textContent = subjects[0];
@@ -342,26 +390,26 @@ function createMockData() {
     });
     
     // Combine regular and averaged data
-    const combinedData = [...mockData, ...averagedData];
+    const combinedData = [...averagedData, ...mockData];
     
     // Use the mock data
     app.data.all = combinedData;
     app.data.metrics = metrics;
     
-    // Get unique subjects (including the average)
-    const uniqueSubjects = [...new Set(combinedData.map(d => d.subject))];
+    // Get unique subjects (including the average) - ensure average comes first
+    let uniqueSubjects = ["Average (All Subjects)", ...subjects];
     
     // Update UI
     updateMetricDropdown(metrics);
     updateSubjectDropdown(uniqueSubjects);
     
-    // Default selection
-    app.currentSubject = uniqueSubjects[0];
+    // Default selection - use Average as default
+    app.currentSubject = "Average (All Subjects)";
     app.currentMetric = metrics[0];
     
     // Update display
     const currentSubject = document.getElementById('current-subject');
-    if (currentSubject) currentSubject.textContent = uniqueSubjects[0];
+    if (currentSubject) currentSubject.textContent = "Average (All Subjects)";
     
     // Reset visualizations
     resetPlayback();
@@ -435,7 +483,27 @@ function updateSubjectDropdown(subjects) {
     subjects.forEach(subject => {
         const option = document.createElement('option');
         option.value = subject;
-        option.textContent = subject;
+        
+        // Format subject display name based on pattern or use custom mapping
+        let displayName = subject;
+        
+        // Check if we have a custom mapping for this specific subject
+        if (app.config.customSubjectNames && app.config.customSubjectNames[subject]) {
+            displayName = app.config.customSubjectNames[subject];
+        } 
+        // Check if we have a pattern-based transformation
+        else if (app.config.subjectPattern) {
+            const pattern = app.config.subjectPattern;
+            
+            // Basic example: if subjectPattern is "Student" and subject is "Student1",
+            // transform to "Student 1"
+            if (subject.startsWith(pattern) && /\d+$/.test(subject)) {
+                const number = subject.match(/\d+$/)[0];
+                displayName = `${pattern} ${number}`;
+            }
+        }
+        
+        option.textContent = displayName;
         if (subject === app.currentSubject) {
             option.selected = true;
         }
@@ -447,7 +515,11 @@ function updateSubjectDropdown(subjects) {
         app.currentSubject = dropdown.value;
         
         const currentSubject = document.getElementById('current-subject');
-        if (currentSubject) currentSubject.textContent = dropdown.value;
+        if (currentSubject) {
+            // Use the formatted display name for the header too
+            const selected = dropdown.options[dropdown.selectedIndex];
+            currentSubject.textContent = selected.textContent;
+        }
         
         resetPlayback();
     });
