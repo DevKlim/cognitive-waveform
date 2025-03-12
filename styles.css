@@ -10,4 +10,444 @@
 /* Import screens styles */
 @import url('./css/screens.css');
 
+<<<<<<< HEAD
 @import url('./custom-waveform.css');
+=======
+.app-logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1db954;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.collection-header {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0 0 15px 0;
+    color: #fff;
+}
+
+.collection-list {
+    list-style: none;
+    margin-bottom: 30px;
+}
+
+.collection-item {
+    padding: 10px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: 500;
+}
+
+.collection-item:hover {
+    background-color: #282828;
+}
+
+.collection-item.active {
+    background-color: #1db954;
+    color: #000;
+}
+
+/* Main content area */
+.main-content {
+    flex: 1;
+    background-color: #181818;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.header-info {
+    margin-bottom: 30px;
+}
+
+.current-selection {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #b3b3b3;
+    font-size: 14px;
+}
+
+/* Visualization area */
+.visualization-container {
+    margin-bottom: 30px;
+}
+
+.chart-container {
+    height: 250px;
+    width: 100%;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+@keyframes pulse {
+    0% { transform: scaleY(1); }
+    100% { transform: scaleY(1.1); }
+}
+
+.waveform-container {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    background-color: #121212;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.waveform-animation {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+}
+
+.waveform-bar {
+    position: absolute;
+    border-radius: 1px;
+    transition: height 0.2s;
+}
+
+.top-bar {
+    bottom: calc(50% + 1px); /* Position just above the center line */
+    transform-origin: bottom;
+    border-radius: 1px 1px 0 0;
+}
+
+.bottom-bar {
+    top: calc(50% + 1px); /* Position just below the center line */
+    transform-origin: top;
+    border-radius: 0 0 1px 1px;
+}
+
+.waveform-center-line {
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.2);
+    top: 50%;
+    left: 0;
+    z-index: 1;
+}
+
+.heart-rate-display {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 10;
+}
+
+.waveform-labels {
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    color: #ffffff;
+    font-size: 11px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 3px 8px;
+    border-radius: 3px;
+    z-index: 10;
+}
+
+/* Pulse visualization styling */
+.pulse-container {
+    width: 100%;
+    height: 100px;
+    background-color: #121212;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pulse-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #1db954;
+    position: absolute;
+    transform: scale(1);
+    transition: transform 0.5s cubic-bezier(0.1, 0.8, 0.3, 1), background-color 0.3s;
+    box-shadow: 0 0 15px rgba(29, 185, 84, 0.5);
+}
+
+.pulse-ring {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 4px solid #1db954;
+    position: absolute;
+    opacity: 0;
+}
+
+.pulse-ring.animate {
+    animation: pulse-ring 1.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+.pulse-beat-indicator {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff;
+    font-size: 12px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 4px 8px;
+    border-radius: 4px;
+    z-index: 10;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.5);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Player controls */
+.player-controls {
+    width: 100%;
+}
+
+.timeline {
+    width: 100%;
+    height: 4px;
+    background-color: #535353;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.timeline-progress {
+    height: 100%;
+    background-color: #1db954;
+    border-radius: 2px;
+    width: 0;
+}
+
+.time-display {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #b3b3b3;
+    margin-bottom: 20px;
+}
+
+.control-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.control-btn:hover {
+    color: #fff;
+}
+
+.play-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #1db954;
+    color: #000;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.play-btn:hover {
+    transform: scale(1.05);
+    background-color: #1ed760;
+}
+
+/* Volume control */
+.volume-control {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+    padding: 0 20px;
+}
+
+.volume-icon {
+    color: #b3b3b3;
+    margin-right: 10px;
+}
+
+.volume-slider {
+    flex-grow: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #535353;
+    border-radius: 2px;
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+    border: none;
+}
+
+/* D3 Chart styling */
+.axis path,
+.axis line {
+    stroke: #666;
+}
+
+.axis text {
+    fill: #b3b3b3;
+    font-size: 12px;
+}
+
+.heart-rate-line {
+    fill: none;
+    stroke: #1db954;
+    stroke-width: 2px;
+}
+
+.current-time-line {
+    stroke: #ff6b6b;
+    stroke-width: 2px;
+    stroke-dasharray: 4, 4;
+}
+
+.chart-tooltip {
+    position: absolute;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 12px;
+    transition: opacity 0.3s;
+}
+
+.chart-overlay {
+    fill: none;
+    pointer-events: all;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Loading indicator */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    color: #1db954;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+}
+
+.project-intro {
+    width: 90%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #121212;
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.intro-container {
+    text-align: left;
+}
+
+.intro-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.intro-subtitle {
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.intro-text {
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.intro-list {
+    font-size: 16px;
+    padding-left: 30px;
+    line-height: 1.6;
+    list-style-type: disc;
+}
+
+.intro-list ul {
+    padding-left: 20px;
+    list-style-type: circle;
+}
+
+.intro-list li {
+    margin-bottom: 8px;
+}
+
+>>>>>>> 135b4a0b4e75a3199f1db2af6eca404ce4b5a53c
