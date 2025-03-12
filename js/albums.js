@@ -148,3 +148,21 @@ function adjustColor(hslColor, hueShift) {
     // Return adjusted color
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if banner exists
+    const tutorialBanner = document.getElementById('tutorial-banner');
+    if (!tutorialBanner) return;
+    
+    // Check if user has seen tutorial
+    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+    
+    
+    // Mark as seen when clicking the Start Tour button
+    const startTourBtn = tutorialBanner.querySelector('.tutorial-btn');
+    if (startTourBtn) {
+        startTourBtn.addEventListener('click', function() {
+            localStorage.setItem('hasSeenTutorial', 'true');
+        });
+    }
+});

@@ -1,6 +1,6 @@
 /**
  * albums.css
- * Styles for the dataset selection (albums) page
+ * Styles for the dataset selection (albums) page including tutorial banner
  */
 
 /* Base styles */
@@ -54,6 +54,130 @@ body {
 .album-header h2 {
     font-size: 32px;
     font-weight: 700;
+}
+
+/* ================================
+   TUTORIAL BANNER STYLES
+   ================================ */
+.tutorial-banner {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+  margin: 0 0 30px 0;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(29, 185, 84, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 10px rgba(29, 185, 84, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tutorial-banner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, transparent 0%, rgba(29, 185, 84, 0.03) 50%, transparent 100%);
+  animation: shine 3s infinite;
+  z-index: 1;
+}
+
+@keyframes shine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.tutorial-banner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(29, 185, 84, 0.2);
+  border-color: rgba(29, 185, 84, 0.5);
+}
+
+.tutorial-icon {
+  background-color: #1db954;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
+
+.tutorial-content {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.tutorial-label {
+  display: inline-block;
+  background-color: rgba(29, 185, 84, 0.2);
+  color: #1db954;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tutorial-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: #fff;
+}
+
+.tutorial-description {
+  color: #b3b3b3;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 500px;
+}
+
+.tutorial-btn {
+  background-color: #1db954;
+  color: #000;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 30px;
+  text-decoration: none;
+  margin-left: 20px;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tutorial-btn:hover {
+  background-color: #1ed760;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(29, 185, 84, 0.4);
+}
+
+.tutorial-btn::after {
+  content: '→';
+  font-size: 18px;
+  margin-left: 5px;
+  transition: transform 0.2s;
+}
+
+.tutorial-btn:hover::after {
+  transform: translateX(3px);
 }
 
 /* Album grid styling */
@@ -163,5 +287,24 @@ body {
     
     .album-selection {
         padding: 20px;
+    }
+    
+    /* Responsive tutorial banner */
+    .tutorial-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        padding: 15px;
+    }
+    
+    .tutorial-icon {
+        margin-bottom: 15px;
+        margin-right: 0;
+    }
+    
+    .tutorial-btn {
+        margin-left: 0;
+        margin-top: 15px;
+        align-self: flex-start;
     }
 }

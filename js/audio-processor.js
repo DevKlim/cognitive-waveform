@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Initialize audio context and sound settings
  */
+
 function initAudio() {
     if (!audioContext) {
         try {
@@ -100,7 +101,7 @@ function initAudio() {
             
             // Create gain node for volume control
             gainNode = audioContext.createGain();
-            gainNode.gain.value = 0.2;
+            gainNode.gain.value = 0.2; // Set volume to 20%
             
             // Create analyzer node for audio visualization
             analyser = audioContext.createAnalyser();
@@ -108,47 +109,37 @@ function initAudio() {
             const bufferLength = analyser.frequencyBinCount;
             audioDataArray = new Uint8Array(bufferLength);
             
-            // Connect nodes - FIXED order
+            // Connect nodes
             gainNode.connect(analyser);
             analyser.connect(audioContext.destination);
             
+            // Initialize custom waveform
+            initCustomWaveform();
+            
+            // Initialize sound profile selector UI
+            initSoundProfileSelector();
+            
             console.log('Audio context initialized');
-            return true;
         } catch (e) {
             console.error('Failed to initialize audio context:', e);
-            return false;
         }
     }
-    return true;
 }
 
 /**
  * Initialize custom waveform
  */
 function initCustomWaveform() {
-    // Initialize AudioContext early if needed
-    if (!audioContext) {
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) {
-            console.error('Failed to initialize audio context:', e);
-            return;
-        }
-    }
+    if (!audioContext) return;
     
     // Create a custom waveform (example of a custom shape)
     const harmonics = 8; // Number of harmonics to include
-    try {
-        customWaveform = audioContext.createPeriodicWave(
-            // Cosine terms (real)
-            new Float32Array(harmonics + 1).map((_, i) => i === 0 ? 0 : Math.pow(0.75, i)),
-            // Sine terms (imag)
-            new Float32Array(harmonics + 1).map((_, i) => i === 0 ? 0 : Math.pow(0.5, i) * (i % 2 ? 1 : -0.8))
-        );
-        console.log('Custom waveform initialized');
-    } catch (e) {
-        console.error('Error creating custom waveform:', e);
-    }
+    customWaveform = audioContext.createPeriodicWave(
+        // Cosine terms (real)
+        new Float32Array(harmonics + 1).map((_, i) => i === 0 ? 0 : Math.pow(0.75, i)),
+        // Sine terms (imag)
+        new Float32Array(harmonics + 1).map((_, i) => i === 0 ? 0 : Math.pow(0.5, i) * (i % 2 ? 1 : -0.8))
+    );
 }
 
 /**
@@ -156,18 +147,7 @@ function initCustomWaveform() {
  */
 function initSoundProfileSelector() {
     const container = document.getElementById('sound-profile-container');
-    if (!container) {
-        console.log('Sound profile container not found, will try again later');
-        return;
-    }
-    
-    // Check if dropdown already exists
-    if (document.getElementById('sound-profile-dropdown')) {
-        console.log('Sound profile selector already initialized');
-        return;
-    }
-    
-    console.log('Initializing sound profile selector');
+    if (!container) return;
     
     // Clear existing content
     container.innerHTML = '';
@@ -534,16 +514,9 @@ function updateOscillatorType() {
  * Start sonification
  */
 function startSonification() {
-    if (!audioContext) {
-        if (!initAudio()) return;
-    }
+    if (!audioContext) initAudio();
     
-    // Resume audio context if suspended
-    if (audioContext.state === 'suspended') {
-        audioContext.resume().catch(e => {
-            console.error('Error resuming audio context:', e);
-        });
-    }
+    if (!audioContext) return; // Exit if audio context creation failed
     
     try {
         // If we're using custom audio, play that instead
@@ -552,6 +525,16 @@ function startSonification() {
                 window.customAudio.play()
                     .then(() => {
                         console.log('Custom audio playback started');
+                        
+                        // Update play button if available
+                        const playButton = document.getElementById('play-sound-preview');
+                        if (playButton) {
+                            playButton.innerHTML = `
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                </svg>
+                            `;
+                        }
                     })
                     .catch(e => {
                         console.error('Error playing custom audio:', e);
@@ -560,34 +543,23 @@ function startSonification() {
             return;
         }
         
-        // FIXED: Stop any existing oscillator first
-        if (oscillator) {
-            try {
-                oscillator.stop();
-                oscillator.disconnect();
-            } catch (e) {
-                // Ignore errors from previous oscillator
+        // For standard and custom waveforms, create oscillator if not exists
+        if (!oscillator) {
+            oscillator = audioContext.createOscillator();
+            
+            // Set appropriate waveform type
+            if (currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM && customWaveform) {
+                oscillator.setPeriodicWave(customWaveform);
+            } else {
+                oscillator.type = currentSoundProfile.waveform;
             }
-            oscillator = null;
+            
+            oscillator.connect(gainNode);
+            oscillator.start();
+            console.log('Sonification started with waveform:', currentSoundProfile.name);
         }
-        
-        // Create a fresh oscillator
-        oscillator = audioContext.createOscillator();
-        
-        // Set waveform type
-        if (currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM && customWaveform) {
-            oscillator.setPeriodicWave(customWaveform);
-        } else {
-            oscillator.type = currentSoundProfile.waveform;
-        }
-        
-        // Connect and start
-        oscillator.connect(gainNode);
-        oscillator.start();
-        console.log('Sonification started');
     } catch (e) {
         console.error('Failed to start sonification:', e);
-        oscillator = null;
     }
 }
 
@@ -598,22 +570,30 @@ function stopSonification() {
     // Stop oscillator-based sonification
     if (oscillator) {
         try {
-            // FIXED: Check context state first
-            if (audioContext && audioContext.state !== 'closed') {
-                oscillator.stop();
-                oscillator.disconnect();
-            }
+            oscillator.stop();
+            oscillator.disconnect();
+            oscillator = null;
+            console.log('Oscillator sonification stopped');
         } catch (e) {
-            console.error('Error stopping oscillator:', e.message);
-        } finally {
-            // Always clear the reference
+            console.error('Error stopping oscillator sonification:', e);
             oscillator = null;
         }
     }
     
-    // Pause custom audio if it's playing
+    // Also pause custom audio if it's playing
     if (window.customAudio && !window.customAudio.paused) {
         window.customAudio.pause();
+        console.log('Custom audio playback paused');
+        
+        // Update play button if available
+        const playButton = document.getElementById('play-sound-preview');
+        if (playButton) {
+            playButton.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+            `;
+        }
     }
 }
 
