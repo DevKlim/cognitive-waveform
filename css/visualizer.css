@@ -15,10 +15,9 @@ body {
     background-color: #121212;
     color: #fff;
     line-height: 1.5;
-    overflow: hidden;
-    position: relative;
-    height: 100vh;
+    min-height: 100vh;
     width: 100vw;
+    overflow-x: hidden;
 }
 
 /* Sidebar */
@@ -159,14 +158,23 @@ body {
 }
 
 /* Layout */
+/* App container */
 .app-container {
     min-height: 100vh;
-    padding: 20px 20px 80px 20px; /* Added bottom padding for wave */
-    display: flex;
-    animation: fadeIn 0.5s ease;
+    padding: 20px 40px 100px 40px; /* Extra padding at bottom for bottom wave */
     margin-left: 0;
     transition: margin-left 0.3s ease;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas: 
+        "header"
+        "metrics"
+        "visualization"
+        "subjects";
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .app-container.sidebar-active {
@@ -199,10 +207,13 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Header styles */
+/* Header info */
 .header-info {
     grid-area: header;
-    margin-bottom: 0;
+    padding: 20px;
+    background-color: #181818;
+    border-radius: 8px;
+    margin-top: 20px;
 }
 
 .header-nav {
@@ -243,6 +254,9 @@ body {
 /* Metrics selection */
 .metrics-selection {
     grid-area: metrics;
+    padding: 20px;
+    background-color: #181818;
+    border-radius: 8px;
 }
 
 .metrics-selection h3 {
@@ -283,22 +297,20 @@ body {
     grid-area: visualization;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    overflow: hidden;
-    padding-right: 10px;
-    margin-bottom: 0;
+    gap: 25px;
+    padding: 20px;
+    background-color: #181818;
+    border-radius: 8px;
 }
 
 /* Chart container */
 .chart-container {
     height: 350px;
     width: 100%;
-    margin-bottom: 10px;
-    position: relative;
     background-color: #121212;
     border-radius: 8px;
     padding: 12px;
-    overflow: visible;
+    position: relative;
 }
 
 /* D3 Chart styling */
@@ -343,7 +355,6 @@ body {
 .waveform-and-pulse-container {
     display: flex;
     width: 100%;
-    margin-bottom: 20px;
     gap: 20px;
 }
 
@@ -355,7 +366,6 @@ body {
     background-color: #121212;
     border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 0;
     padding: 10px;
 }
 
@@ -430,7 +440,6 @@ body {
     background-color: #121212;
     border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -560,6 +569,7 @@ body {
     align-items: center;
     justify-content: center;
     transition: transform 0.2s, background-color 0.2s;
+    margin: 0 15px;
 }
 
 .play-btn:hover {
@@ -576,7 +586,6 @@ body {
     background-color: #121212;
     border-radius: 8px;
     padding: 20px;
-    margin-bottom: 20px;
 }
 
 /* Volume control */
@@ -599,42 +608,6 @@ body {
     background: #535353;
     border-radius: 2px;
     outline: none;
-}
-
-.volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #1db954;
-    cursor: pointer;
-}
-
-.volume-slider::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #1db954;
-    cursor: pointer;
-    border: none;
-}
-
-.volume-control, .playback-control {
-    display: flex;
-    align-items: center;
-    padding: 5px 20px;
-    margin: 10px 0;
-}
-.volume-slider, .speed-slider {
-    flex-grow: 1;
-    height: 8px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: #535353;
-    border-radius: 2px;
-    outline: none;
-    margin: 0 15px;
 }
 
 /* Playback speed control */
@@ -661,25 +634,6 @@ body {
     outline: none;
 }
 
-.speed-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #1db954;
-    cursor: pointer;
-}
-
-.speed-slider::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #1db954;
-    cursor: pointer;
-    border: none;
-}
-
 .speed-value {
     color: #b3b3b3;
     margin-left: 10px;
@@ -688,12 +642,50 @@ body {
     text-align: right;
 }
 
+.volume-slider::-webkit-slider-thumb, .speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb, .speed-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1db954;
+    cursor: pointer;
+    border: none;
+}
+
+.volume-control, .playback-control {
+    display: flex;
+    align-items: center;
+    padding: 5px 20px;
+    margin: 10px 0;
+}
+
+.volume-slider, .speed-slider {
+    flex-grow: 1;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #535353;
+    border-radius: 2px;
+    outline: none;
+    margin: 0 15px;
+}
+
 /* Subjects panel */
 .subjects-panel {
     grid-area: subjects;
-    background-color: #121212;
+    background-color: #181818;
     border-radius: 8px;
-    padding: 15px;
+    padding: 20px;
+    margin-bottom: 70px; /* Extra space for bottom wave */
 }
 
 .subjects-panel h3 {
@@ -785,27 +777,24 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 992px) {
-    .app-container {
-        padding-left: 70px;
-    }
-    
     .main-content {
         margin-left: 0;
+    }
+    
+    .app-container {
+        padding-left: 70px;
+        grid-gap: 15px;
     }
     
     .sidebar {
         width: 280px;
     }
+
 }
 
 @media (max-width: 768px) {
     .app-container {
         padding: 10px 10px 80px 60px;
-    }
-    
-    .main-content {
-        padding: 15px;
-        gap: 15px;
     }
     
     .waveform-and-pulse-container {
@@ -815,6 +804,11 @@ body {
     .pulse-container {
         width: 100%;
         margin-top: 10px;
+    }
+    
+    .main-content {
+        padding: 15px;
+        gap: 15px;
     }
     
     .metrics-chips, .subjects-list {
