@@ -97,4 +97,8 @@ function resetPlayback() {
     updateCircularWave();
     updateTimeDisplay();
     updateHandlePosition();
+    // Ensure bottom wave is also updated
+    if (typeof initBottomWave === 'function') {
+        initBottomWave();
+    }
 }

@@ -11,14 +11,14 @@ function initChart() {
 
     const container = document.getElementById('chart-container');
     // Increase top margin to prevent cutoff and bring chart lower
-    const margin = { top: 30, right: 20, bottom: 40, left: 50 };
+    const margin = { top: 100, right: 20, bottom: 100, left: 50 };
     const width = container.clientWidth - margin.left - margin.right;
     const height = container.clientHeight - margin.top - margin.bottom;
 
     const svg = d3.select('#chart-container')
         .append('svg')
         .attr('width', width + margin.left + margin.right)
-        .attr('height', height + margin.top + margin.bottom)
+        .attr('height', height + margin.top + margin.bottom+200)
         .append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
 

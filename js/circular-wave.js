@@ -91,8 +91,8 @@ function updateCircularWave() {
         // Add audio-responsive boost
         const audioEffect = audioBoost * 20;
         
-        // Calculate final height
-        const height = baseHeight + variation + audioEffect;
+        // Calculate final height with a maximum limit of 30px
+        const height = Math.min(baseHeight + variation + audioEffect, 30);
         
         // Apply with transition for smoothness
         bar.style.height = `${height}px`;

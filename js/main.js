@@ -114,5 +114,9 @@ function setupUIComponents() {
         initChart();
         updateWaveform();
         updateCircularWave();
+        // Also update bottom wave
+        if (typeof initBottomWave === 'function') {
+            initBottomWave();
+        }
     }, 250));
 }
