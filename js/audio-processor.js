@@ -66,14 +66,28 @@ let currentSoundProfile = SOUND_PROFILES[0];
 // For custom waveform
 let customWaveform = null;
 
-// Initialize early on DOM load
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize sound profile selector UI immediately
-    // This ensures it's available before playing
-    setTimeout(initSoundProfileSelector, 500);
-    
-    // Also initialize custom waveform if needed
-    setTimeout(initCustomWaveform, 700);
+document.addEventListener('DOMContentLoaded', function() {
+    // Reset audio system when page loads
+    setTimeout(function() {
+        // Close any existing audio context
+        if (window.audioContext) {
+            try {
+                window.audioContext.close();
+            } catch (e) {}
+            window.audioContext = null;
+        }
+        
+        // Clear audio nodes
+        window.oscillator = null;
+        window.gainNode = null;
+        window.analyser = null;
+        
+        // Reinitialize audio
+        if (typeof initAudio === 'function') {
+            initAudio();
+            console.log('Audio system reset and reinitialized');
+        }
+    }, 1000);
 });
 
 /**
@@ -86,7 +100,7 @@ function initAudio() {
             
             // Create gain node for volume control
             gainNode = audioContext.createGain();
-            gainNode.gain.value = 0.2; // Set volume to 20%
+            gainNode.gain.value = 0.2;
             
             // Create analyzer node for audio visualization
             analyser = audioContext.createAnalyser();
@@ -94,25 +108,18 @@ function initAudio() {
             const bufferLength = analyser.frequencyBinCount;
             audioDataArray = new Uint8Array(bufferLength);
             
-            // Connect nodes
+            // Connect nodes - FIXED order
             gainNode.connect(analyser);
             analyser.connect(audioContext.destination);
             
-            // Initialize custom waveform if not done yet
-            if (!customWaveform) {
-                initCustomWaveform();
-            }
-            
-            // Make sure sound profile selector is initialized if not done yet
-            if (!document.getElementById('sound-profile-dropdown')) {
-                initSoundProfileSelector();
-            }
-            
             console.log('Audio context initialized');
+            return true;
         } catch (e) {
             console.error('Failed to initialize audio context:', e);
+            return false;
         }
     }
+    return true;
 }
 
 /**
@@ -527,9 +534,16 @@ function updateOscillatorType() {
  * Start sonification
  */
 function startSonification() {
-    if (!audioContext) initAudio();
+    if (!audioContext) {
+        if (!initAudio()) return;
+    }
     
-    if (!audioContext) return; // Exit if audio context creation failed
+    // Resume audio context if suspended
+    if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(e => {
+            console.error('Error resuming audio context:', e);
+        });
+    }
     
     try {
         // If we're using custom audio, play that instead
@@ -538,16 +552,6 @@ function startSonification() {
                 window.customAudio.play()
                     .then(() => {
                         console.log('Custom audio playback started');
-                        
-                        // Update play button if available
-                        const playButton = document.getElementById('play-sound-preview');
-                        if (playButton) {
-                            playButton.innerHTML = `
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                                </svg>
-                            `;
-                        }
                     })
                     .catch(e => {
                         console.error('Error playing custom audio:', e);
@@ -556,23 +560,34 @@ function startSonification() {
             return;
         }
         
-        // For standard and custom waveforms, create oscillator if not exists
-        if (!oscillator) {
-            oscillator = audioContext.createOscillator();
-            
-            // Set appropriate waveform type
-            if (currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM && customWaveform) {
-                oscillator.setPeriodicWave(customWaveform);
-            } else {
-                oscillator.type = currentSoundProfile.waveform;
+        // FIXED: Stop any existing oscillator first
+        if (oscillator) {
+            try {
+                oscillator.stop();
+                oscillator.disconnect();
+            } catch (e) {
+                // Ignore errors from previous oscillator
             }
-            
-            oscillator.connect(gainNode);
-            oscillator.start();
-            console.log('Sonification started with waveform:', currentSoundProfile.name);
+            oscillator = null;
         }
+        
+        // Create a fresh oscillator
+        oscillator = audioContext.createOscillator();
+        
+        // Set waveform type
+        if (currentSoundProfile.waveform === WAVEFORM_TYPES.CUSTOM && customWaveform) {
+            oscillator.setPeriodicWave(customWaveform);
+        } else {
+            oscillator.type = currentSoundProfile.waveform;
+        }
+        
+        // Connect and start
+        oscillator.connect(gainNode);
+        oscillator.start();
+        console.log('Sonification started');
     } catch (e) {
         console.error('Failed to start sonification:', e);
+        oscillator = null;
     }
 }
 
@@ -583,30 +598,22 @@ function stopSonification() {
     // Stop oscillator-based sonification
     if (oscillator) {
         try {
-            oscillator.stop();
-            oscillator.disconnect();
-            oscillator = null;
-            console.log('Oscillator sonification stopped');
+            // FIXED: Check context state first
+            if (audioContext && audioContext.state !== 'closed') {
+                oscillator.stop();
+                oscillator.disconnect();
+            }
         } catch (e) {
-            console.error('Error stopping oscillator sonification:', e);
+            console.error('Error stopping oscillator:', e.message);
+        } finally {
+            // Always clear the reference
             oscillator = null;
         }
     }
     
-    // Also pause custom audio if it's playing
+    // Pause custom audio if it's playing
     if (window.customAudio && !window.customAudio.paused) {
         window.customAudio.pause();
-        console.log('Custom audio playback paused');
-        
-        // Update play button if available
-        const playButton = document.getElementById('play-sound-preview');
-        if (playButton) {
-            playButton.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                </svg>
-            `;
-        }
     }
 }
 
