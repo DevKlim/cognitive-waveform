@@ -1,4 +1,4 @@
-timestamp,student,exam,hr,temp
+timestamp,subject,exam,hr,temp
 0.0,S1,Midterm 1,84.0,22.51
 20.0,S1,Midterm 1,102.33,22.51
 40.0,S1,Midterm 1,104.98,22.53

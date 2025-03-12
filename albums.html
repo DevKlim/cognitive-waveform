@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognify - Dataset Selection</title>
+    <link rel="stylesheet" href="css/albums.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 15L45 35 25 40 37 52 32 72 50 62 68 72 63 52 75 40 55 35z' fill='%231db954'/></svg>">
+</head>
+<body>
+    <!-- ALBUM SELECTION SCREEN -->
+    <div id="album-selection" class="album-selection">
+        <div class="album-header">
+            <div class="logo-small">
+                <svg width="36" height="36" viewBox="0 0 24 24">
+                    <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" fill="#1db954" />
+                </svg>
+                <span>Cognify</span>
+            </div>
+            <h2>Select a Dataset</h2>
+        </div>
+        
+        <div id="album-grid" class="album-grid">
+            <!-- Albums will be populated dynamically by JS -->
+            <!-- Static fallback cards in case JS fails -->
+            <div class="album-card" data-file="data/driving_clean_data.csv">
+                <div class="album-cover">
+                    <div class="album-cover-img" style="background: linear-gradient(135deg, hsl(0, 80%, 50%), hsl(30, 80%, 40%))">
+                        <svg width="50%" height="50%" viewBox="0 0 24 24" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                            <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" fill="rgba(255,255,255,0.8)" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="album-info">
+                    <div class="album-title">Driving Clean Data</div>
+                    <div class="album-artist">Cognitive Dataset</div>
+                </div>
+            </div>
+            
+            <div class="album-card" data-file="data/exam_dataset.csv">
+                <div class="album-cover">
+                    <div class="album-cover-img" style="background: linear-gradient(135deg, hsl(120, 80%, 50%), hsl(150, 80%, 40%))">
+                        <svg width="50%" height="50%" viewBox="0 0 24 24" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                            <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" fill="rgba(255,255,255,0.8)" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="album-info">
+                    <div class="album-title">Exam Dataset</div>
+                    <div class="album-artist">Cognitive Dataset</div>
+                </div>
+            </div>
+            
+            <div class="album-card" data-file="data/exam_dataset_10s.csv">
+                <div class="album-cover">
+                    <div class="album-cover-img" style="background: linear-gradient(135deg, hsl(240, 80%, 50%), hsl(270, 80%, 40%))">
+                        <svg width="50%" height="50%" viewBox="0 0 24 24" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                            <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" fill="rgba(255,255,255,0.8)" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="album-info">
+                    <div class="album-title">Exam Dataset (10s)</div>
+                    <div class="album-artist">Cognitive Dataset</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- D3.js for visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- Albums selection JavaScript -->
+    <script src="js/albums.js"></script>
+</body>
+</html>

@@ -3,127 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognitive Load Audio Visualizer</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Cognify - Cognitive Waveform Visualizer</title>
+    <link rel="stylesheet" href="css/loading.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 15L45 35 25 40 37 52 32 72 50 62 68 72 63 52 75 40 55 35z' fill='%231db954'/></svg>">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar (like Spotify's left panel) -->
-        <div class="sidebar">
-            <div class="app-logo">
-                <svg width="24" height="24" ...>
-                    <path d="M12 4L10.5 9.5 ..." fill="#1db954" />
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo-container">
+                <svg width="120" height="120" viewBox="0 0 24 24">
+                    <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" fill="#1db954" />
                 </svg>
-                Cognify
+                <h1 class="app-title">Cognify</h1>
             </div>
-            
-            <h2 class="collection-header">Students</h2>
-            <ul id="student-list" class="collection-list">
-                <li class="collection-item active" data-student="S1">Student 1</li>
-                <li class="collection-item" data-student="S2">Student 2</li>
-                <li class="collection-item" data-student="S3">Student 3</li>
-            </ul>
-            
-            <h2 class="collection-header">Exams</h2>
-            <ul id="exam-list" class="collection-list">
-                <li class="collection-item active" data-exam="Midterm 1">Midterm 1</li>
-                <li class="collection-item" data-exam="Midterm 2">Midterm 2</li>
-                <li class="collection-item" data-exam="Final Exam">Final Exam</li>
-            </ul>
-        
-            <!-- Add a new heading + ul for the file list -->
-            <h2 class="collection-header">Recordings</h2>
-            <ul id="file-list" class="collection-list">
-                <!-- Will be dynamically populated by global.js -->
-            </ul>
-        
-            <div id="loading-indicator" class="loading hidden">
-                Loading data...
+            <div class="loading-bar-container">
+                <div class="loading-bar"></div>
             </div>
-        </div>
-        
-        <!-- Main content area -->
-        <div class="main-content">
-            <div class="header-info">
-                <h1 id="current-exam" class="current-selection">Midterm 1</h1>
-                <div id="current-student" class="subtitle">Student 1</div>
-            </div>
-            
-            <div class="visualization-container">
-                <!-- Line chart -->
-                <div id="chart-container" class="chart-container"></div>
-                
-                <!-- Waveform visualization -->
-                <div id="waveform-container" class="waveform-container">
-                    <div class="waveform-center-line"></div>
-                    <div id="waveform-bars" class="waveform-bars"></div>
-                    <div id="heart-rate-display" class="heart-rate-display">Heart Rate: 0 BPM</div>
-                </div>
-
-                <!-- Pulse visualization -->
-                <div id="pulse-container" class="pulse-container">
-                    <div id="pulse-circle" class="pulse-circle"></div>
-                    <div id="pulse-ring" class="pulse-ring"></div>
-                    <div id="pulse-beat-indicator" class="pulse-beat-indicator">Waiting for beat...</div>
-                </div>
-                
-                <!-- Player controls -->
-                <div class="player-controls">
-                    <div id="timeline" class="timeline">
-                        <div id="timeline-progress" class="timeline-progress"></div>
-                    </div>
-                    
-                    <div class="time-display">
-                        <span id="current-time">0:00</span>
-                        <span id="total-time">0:00</span>
-                    </div>
-                    
-                    <div class="control-buttons">
-                        <button id="skip-back-btn" class="control-btn">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M19 20L9 12L19 4V20Z" fill="currentColor"/>
-                                <path d="M5 4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                        
-                        <button id="play-btn" class="play-btn">
-                            <svg id="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
-                            </svg>
-                            
-                            <svg id="pause-icon" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M10 4H6V20H10V4Z" fill="currentColor"/>
-                                <path d="M18 4H14V20H18V4Z" fill="currentColor"/>
-                            </svg>
-                        </button>
-                        
-                        <button id="skip-forward-btn" class="control-btn">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5 4L15 12L5 20V4Z" fill="currentColor"/>
-                                <path d="M19 4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="volume-control">
-                    <span class="volume-icon">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 2L4 6H1V10H4L8 14V2Z" fill="currentColor"/>
-                            <path d="M11.5 3.5C12.5 4.5 13 5.7 13 7C13 8.3 12.5 9.5 11.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                            <path d="M14.5 1C16.2 2.7 17 4.7 17 7C17 9.3 16.2 11.3 14.5 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                    </span>
-                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="20">
-                </div>
-            </div>
+            <p class="loading-text">Visualizing cognitive rhythms...</p>
         </div>
     </div>
     
-    <div id="chart-tooltip" class="chart-tooltip hidden"></div>
-    
-    <!-- D3.js -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="global.js"></script>
+    <script>
+        // Simple redirect to albums.html after loading animation
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Loading sequence started");
+            
+            // Animation duration for loading bar is set to 3s in CSS
+            // Add slight delay to ensure animation completes
+            setTimeout(() => {
+                console.log("Loading complete, redirecting to albums page");
+                window.location.href = 'albums.html';
+            }, 3500);
+        });
+    </script>
 </body>
 </html>
