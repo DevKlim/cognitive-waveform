@@ -5,6 +5,12 @@
  */
 
 // Available waveform types
+/**
+ * audio-processor.js
+ * Enhanced audio processing with early initialization of sound selector
+ */
+
+// Available waveform types
 const WAVEFORM_TYPES = {
     SINE: 'sine',
     TRIANGLE: 'triangle',
@@ -60,6 +66,16 @@ let currentSoundProfile = SOUND_PROFILES[0];
 // For custom waveform
 let customWaveform = null;
 
+// Initialize early on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize sound profile selector UI immediately
+    // This ensures it's available before playing
+    setTimeout(initSoundProfileSelector, 500);
+    
+    // Also initialize custom waveform if needed
+    setTimeout(initCustomWaveform, 700);
+});
+
 /**
  * Initialize audio context and sound settings
  */
@@ -82,11 +98,15 @@ function initAudio() {
             gainNode.connect(analyser);
             analyser.connect(audioContext.destination);
             
-            // Initialize custom waveform
-            initCustomWaveform();
+            // Initialize custom waveform if not done yet
+            if (!customWaveform) {
+                initCustomWaveform();
+            }
             
-            // Initialize sound profile selector UI
-            initSoundProfileSelector();
+            // Make sure sound profile selector is initialized if not done yet
+            if (!document.getElementById('sound-profile-dropdown')) {
+                initSoundProfileSelector();
+            }
             
             console.log('Audio context initialized');
         } catch (e) {
@@ -99,16 +119,29 @@ function initAudio() {
  * Initialize custom waveform
  */
 function initCustomWaveform() {
-    if (!audioContext) return;
+    // Initialize AudioContext early if needed
+    if (!audioContext) {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.error('Failed to initialize audio context:', e);
+            return;
+        }
+    }
     
     // Create a custom waveform (example of a custom shape)
     const harmonics = 8; // Number of harmonics to include
-    customWaveform = audioContext.createPeriodicWave(
-        // Cosine terms (real)
-        new Float32Array(harmonics + 1).map((_, i) => i === 0 ? 0 : Math.pow(0.75, i)),
-        // Sine terms (imag)
-        new Float32Array(harmonics + 1).map((_, i) => i === 0 ? 0 : Math.pow(0.5, i) * (i % 2 ? 1 : -0.8))
-    );
+    try {
+        customWaveform = audioContext.createPeriodicWave(
+            // Cosine terms (real)
+            new Float32Array(harmonics + 1).map((_, i) => i === 0 ? 0 : Math.pow(0.75, i)),
+            // Sine terms (imag)
+            new Float32Array(harmonics + 1).map((_, i) => i === 0 ? 0 : Math.pow(0.5, i) * (i % 2 ? 1 : -0.8))
+        );
+        console.log('Custom waveform initialized');
+    } catch (e) {
+        console.error('Error creating custom waveform:', e);
+    }
 }
 
 /**
@@ -116,7 +149,18 @@ function initCustomWaveform() {
  */
 function initSoundProfileSelector() {
     const container = document.getElementById('sound-profile-container');
-    if (!container) return;
+    if (!container) {
+        console.log('Sound profile container not found, will try again later');
+        return;
+    }
+    
+    // Check if dropdown already exists
+    if (document.getElementById('sound-profile-dropdown')) {
+        console.log('Sound profile selector already initialized');
+        return;
+    }
+    
+    console.log('Initializing sound profile selector');
     
     // Clear existing content
     container.innerHTML = '';
