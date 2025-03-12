@@ -1,6 +1,6 @@
 /**
  * data-manager.js
- * Handles data loading, processing and dataset management
+ * Enhanced data loading, processing and dataset management with averaging
  */
 
 /**
@@ -98,7 +98,7 @@ function loadCSVFile(filePath, displayName) {
             console.log('CSV loaded successfully with headers:', Object.keys(data[0]));
             processData(data, displayName || 'Dataset');
             
-            // Hide loading indicator
+            // Hide loading indicator immediately after processing data
             if (loadingIndicator) {
                 loadingIndicator.classList.add('hidden');
             }
@@ -120,7 +120,7 @@ function loadCSVFile(filePath, displayName) {
 }
 
 /**
- * Process the CSV data
+ * Process the CSV data and calculate improved averages across subjects
  */
 function processData(data, displayName) {
     // First, determine available columns
@@ -164,19 +164,117 @@ function processData(data, displayName) {
         return processed;
     });
     
+    // Create improved average subject data
+    
+    // First, get unique subjects and their duration
+    const uniqueSubjects = [...new Set(parsedData.map(d => d.subject))];
+    const subjectDurations = {};
+    
+    uniqueSubjects.forEach(subject => {
+        const subjectData = parsedData.filter(d => d.subject === subject);
+        if (subjectData.length > 0) {
+            const minTime = d3.min(subjectData, d => d.timestamp);
+            const maxTime = d3.max(subjectData, d => d.timestamp);
+            subjectDurations[subject] = maxTime - minTime;
+        }
+    });
+    
+    // Find the subject with the shortest duration
+    let shortestDuration = Infinity;
+    let shortestSubject = null;
+    
+    for (const [subject, duration] of Object.entries(subjectDurations)) {
+        if (duration < shortestDuration && duration > 0) {
+            shortestDuration = duration;
+            shortestSubject = subject;
+        }
+    }
+    
+    console.log(`Shortest duration: ${shortestDuration} from subject: ${shortestSubject}`);
+    
+    // Create 100 evenly spaced sample points (1% increments)
+    const numSamples = 500;
+    const sampleInterval = shortestDuration / numSamples;
+    
+    // Create averaged data points for each sample interval
+    const averagedData = [];
+    
+    // Get the minimum timestamp across all subjects as our starting point
+    const globalMinTime = d3.min(parsedData, d => d.timestamp);
+    
+    for (let i = 0; i < numSamples; i++) {
+        // Calculate the target timestamp for this sample
+        const targetTime = globalMinTime + (i * sampleInterval);
+        
+        // Find data points from each subject closest to this timestamp
+        const samplesFromAllSubjects = [];
+        
+        uniqueSubjects.forEach(subject => {
+            const subjectData = parsedData.filter(d => d.subject === subject);
+            if (subjectData.length === 0) return;
+            
+            // Find the closest data point to the target time
+            let closestPoint = null;
+            let minDiff = Infinity;
+            
+            subjectData.forEach(point => {
+                const diff = Math.abs(point.timestamp - targetTime);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestPoint = point;
+                }
+            });
+            
+            // Only include if it's reasonably close (within one interval)
+            if (closestPoint && minDiff <= sampleInterval) {
+                samplesFromAllSubjects.push(closestPoint);
+            }
+        });
+        
+        // Skip if no samples found
+        if (samplesFromAllSubjects.length === 0) continue;
+        
+        // Calculate averages for each metric
+        const avgDataPoint = {
+            timestamp: targetTime,
+            subject: "Average (All Subjects)"
+        };
+        
+        numericColumns.forEach(metric => {
+            // Get values for this metric from the samples
+            const values = samplesFromAllSubjects
+                .map(d => d[metric])
+                .filter(val => val !== undefined && !isNaN(val));
+            
+            // Skip if no valid values
+            if (values.length === 0) return;
+            
+            // Calculate average
+            const sum = values.reduce((acc, val) => acc + val, 0);
+            avgDataPoint[metric] = sum / values.length;
+        });
+        
+        averagedData.push(avgDataPoint);
+    }
+    
+    console.log(`Generated ${averagedData.length} averaged data points`);
+    
+    // Combine regular data with averaged data
+    const combinedData = [...parsedData, ...averagedData];
+    
     // Save to global state
-    app.data.all = parsedData;
+    app.data.all = combinedData;
     app.data.metrics = numericColumns;
     app.currentDataType = displayName;
 
     console.log(`Found ${numericColumns.length} metrics:`, numericColumns);
 
-    // Get unique subjects
-    const subjects = [...new Set(parsedData.map(d => d.subject))];
+    // Get unique subjects (including the average)
+    const subjects = [...new Set(combinedData.map(d => d.subject))];
     
-    // Update UI
-    updateMetricSelection(numericColumns);
-    updateSubjectSelection(subjects);
+    // Update UI using newer dropdown approach
+    updateMetricDropdown(numericColumns);
+    updateSubjectDropdown(subjects);
     
     // Default selection
     if (subjects.length > 0) {
@@ -225,16 +323,37 @@ function createMockData() {
         });
     });
     
+    // Create averaged data
+    const averagedData = [];
+    timestamps.forEach(time => {
+        const avgPoint = {
+            timestamp: time,
+            subject: "Average (All Subjects)"
+        };
+        
+        metrics.forEach(metric => {
+            const dataAtTime = mockData.filter(d => d.timestamp === time);
+            const values = dataAtTime.map(d => d[metric]);
+            const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+            avgPoint[metric] = avg;
+        });
+        
+        averagedData.push(avgPoint);
+    });
+    
+    // Combine regular and averaged data
+    const combinedData = [...mockData, ...averagedData];
+    
     // Use the mock data
-    app.data.all = mockData;
+    app.data.all = combinedData;
     app.data.metrics = metrics;
     
-    // Get unique subjects
-    const uniqueSubjects = [...new Set(mockData.map(d => d.subject))];
+    // Get unique subjects (including the average)
+    const uniqueSubjects = [...new Set(combinedData.map(d => d.subject))];
     
     // Update UI
-    updateMetricSelection(metrics);
-    updateSubjectSelection(uniqueSubjects);
+    updateMetricDropdown(metrics);
+    updateSubjectDropdown(uniqueSubjects);
     
     // Default selection
     app.currentSubject = uniqueSubjects[0];
@@ -246,85 +365,100 @@ function createMockData() {
     
     // Reset visualizations
     resetPlayback();
+    
+    // Make sure loading indicator is hidden
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
+        loadingIndicator.classList.add('hidden');
+    }
 }
 
 /**
- * Update the metric selection UI
+ * Update the metric selection using a dropdown
  */
-function updateMetricSelection(metrics) {
-    const metricsContainer = document.getElementById('metrics-chips');
+function updateMetricDropdown(metrics) {
+    const metricsContainer = document.getElementById('metrics-dropdown-container');
     if (!metricsContainer) return;
     
-    // Clear existing metrics
+    // Clear existing content
     metricsContainer.innerHTML = '';
     
-    // Add metric chips
+    // Create dropdown
+    const dropdown = document.createElement('select');
+    dropdown.id = 'metrics-dropdown';
+    dropdown.className = 'select-dropdown';
+    
+    // Create options
     metrics.forEach(metric => {
-        const chip = document.createElement('div');
-        chip.className = 'metric-chip';
+        const option = document.createElement('option');
+        option.value = metric;
+        option.textContent = metric;
         if (metric === app.currentMetric) {
-            chip.classList.add('active');
+            option.selected = true;
         }
-        chip.textContent = metric;
-        chip.setAttribute('data-metric', metric);
-        
-        // Add click handler
-        chip.addEventListener('click', () => {
-            // Update active state in UI
-            document.querySelectorAll('.metric-chip').forEach(el => {
-                el.classList.remove('active');
-            });
-            chip.classList.add('active');
-            
-            // Update global state
-            app.currentMetric = metric;
-            
-            // Reset visualization
-            resetPlayback();
-        });
-        
-        metricsContainer.appendChild(chip);
+        dropdown.appendChild(option);
     });
+    
+    // Add change handler
+    dropdown.addEventListener('change', () => {
+        app.currentMetric = dropdown.value;
+        resetPlayback();
+    });
+    
+    // Add label
+    const label = document.createElement('label');
+    label.htmlFor = 'metrics-dropdown';
+    label.textContent = 'Select Metric: ';
+    label.className = 'dropdown-label';
+    
+    // Add to container
+    metricsContainer.appendChild(label);
+    metricsContainer.appendChild(dropdown);
 }
 
 /**
- * Update the subject selection UI
+ * Update the subject selection using a dropdown
  */
-function updateSubjectSelection(subjects) {
-    const subjectsContainer = document.getElementById('subjects-list');
+function updateSubjectDropdown(subjects) {
+    const subjectsContainer = document.getElementById('subjects-dropdown-container');
     if (!subjectsContainer) return;
     
-    // Clear existing subjects
+    // Clear existing content
     subjectsContainer.innerHTML = '';
     
-    // Add subject chips
+    // Create dropdown
+    const dropdown = document.createElement('select');
+    dropdown.id = 'subjects-dropdown';
+    dropdown.className = 'select-dropdown';
+    
+    // Create options
     subjects.forEach(subject => {
-        const chip = document.createElement('div');
-        chip.className = 'subject-chip';
+        const option = document.createElement('option');
+        option.value = subject;
+        option.textContent = subject;
         if (subject === app.currentSubject) {
-            chip.classList.add('active');
+            option.selected = true;
         }
-        chip.textContent = subject;
-        chip.setAttribute('data-subject', subject);
-        
-        // Add click handler
-        chip.addEventListener('click', () => {
-            // Update active state in UI
-            document.querySelectorAll('.subject-chip').forEach(el => {
-                el.classList.remove('active');
-            });
-            chip.classList.add('active');
-            
-            // Update global state
-            app.currentSubject = subject;
-            
-            const currentSubject = document.getElementById('current-subject');
-            if (currentSubject) currentSubject.textContent = subject;
-            
-            // Reset visualization
-            resetPlayback();
-        });
-        
-        subjectsContainer.appendChild(chip);
+        dropdown.appendChild(option);
     });
+    
+    // Add change handler
+    dropdown.addEventListener('change', () => {
+        app.currentSubject = dropdown.value;
+        
+        const currentSubject = document.getElementById('current-subject');
+        if (currentSubject) currentSubject.textContent = dropdown.value;
+        
+        resetPlayback();
+    });
+    
+    // Add label
+    const label = document.createElement('label');
+    label.htmlFor = 'subjects-dropdown';
+    label.textContent = 'Select Subject: ';
+    label.className = 'dropdown-label';
+    
+    // Add to container
+    subjectsContainer.appendChild(label);
+    subjectsContainer.appendChild(dropdown);
 }

@@ -1,6 +1,6 @@
 /**
  * waveform-visualizer.js
- * Handles the waveform visualization
+ * Handles the waveform visualization without jump counter
  */
 
 /**
@@ -49,20 +49,6 @@ function updateWaveform() {
     const minValue = d3.min(app.data.filtered, valueGetter);
     const maxValue = d3.max(app.data.filtered, valueGetter);
     
-    // Detect significant jumps
-    const jumpThreshold = (maxValue - minValue) * 0.15;
-    const jumps = [];
-    
-    for (let i = 1; i < app.data.filtered.length; i++) {
-        const current = valueGetter(app.data.filtered[i]);
-        const previous = valueGetter(app.data.filtered[i-1]);
-        const change = Math.abs(current - previous);
-        
-        if (change > jumpThreshold) {
-            jumps.push(i);
-        }
-    }
-    
     // Create bars for the waveform
     const barWidth = 3; // Width of each bar
     const barGap = 1; // Gap between bars
@@ -86,9 +72,6 @@ function updateWaveform() {
         
         // Get the value for this data point
         const value = valueGetter(dataPoint);
-        
-        // Check for jump point
-        const isJumpPoint = jumps.includes(i);
         
         // Normalize value between 0-1 with slight exaggeration
         const exaggerationFactor = 1.4;
@@ -119,7 +102,7 @@ function updateWaveform() {
         bottomBar.style.left = `${leftPosition}px`;
         bottomBar.style.opacity = Math.max(0.25, opacity);
         
-        // Style based on whether this is a jump point, current position, or regular bar
+        // Style based on current position or regular bar
         let barColor, barGlow;
         
         if (i === currentIndex) {
@@ -128,10 +111,6 @@ function updateWaveform() {
             barGlow = `0 0 6px ${baseBarColor}`;
             topBar.style.width = `${barWidth + 1}px`;
             bottomBar.style.width = `${barWidth + 1}px`;
-        } else if (isJumpPoint) {
-            // Jump points - accent color with subtle glow
-            barColor = accentBarColor;
-            barGlow = `0 0 4px ${accentBarColor}`;
         } else {
             // Regular points - color gradient based on value
             const hue = 120 + (normalizedValue * 180); // Green to blue gradient
@@ -164,12 +143,4 @@ function updateWaveform() {
     
     // Add waveform to container
     container.appendChild(waveformContainer);
-    
-    // Add jump counter if needed
-    if (jumps.length > 0) {
-        const labelContainer = document.createElement('div');
-        labelContainer.className = 'waveform-labels';
-        labelContainer.textContent = `${jumps.length} significant changes detected`;
-        container.appendChild(labelContainer);
-    }
 }

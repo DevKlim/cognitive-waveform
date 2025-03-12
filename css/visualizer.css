@@ -1,16 +1,18 @@
 /**
  * visualizer.css
- * Main styles for the visualization page
+ * Complete CSS for the Cognitive Waveform Visualization interface
  */
 
-/* Base styles */
-* {
+/* ================================
+   BASE STYLES
+   ================================ */
+   * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-}
-
-body {
+  }
+  
+  body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     background-color: #121212;
     color: #fff;
@@ -18,10 +20,142 @@ body {
     min-height: 100vh;
     width: 100vw;
     overflow-x: hidden;
-}
-
-/* Sidebar */
-.sidebar {
+  }
+  
+  /* Layout */
+  .app-container {
+    min-height: 100vh;
+    padding: 20px 40px 100px 40px; /* Extra padding at bottom for bottom wave */
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas: 
+        "header"
+        "selectors"
+        "visualization";
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .app-container.sidebar-active {
+    margin-left: 320px;
+  }
+  
+  /* Header info */
+  .header-info {
+    grid-area: header;
+    padding: 20px;
+    background-color: #181818;
+    border-radius: 8px;
+    margin-top: 20px;
+  }
+  
+  .header-nav {
+    display: flex;
+    margin-bottom: 15px;
+  }
+  
+  .back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #282828;
+    border: none;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  
+  .back-button:hover {
+    background: #333;
+    transform: translateY(-2px);
+  }
+  
+  .current-selection {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .subtitle {
+    color: #b3b3b3;
+    font-size: 14px;
+  }
+  
+  /* Selection panel for dropdowns */
+  .selection-panel {
+    grid-area: selectors;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+    padding: 20px;
+    background-color: #181818;
+    border-radius: 8px;
+  }
+  
+  .dropdown-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 250px;
+  }
+  
+  .dropdown-label {
+    color: #e0e0e0;
+    font-size: 16px;
+    font-weight: 500;
+    min-width: 120px;
+  }
+  
+  .select-dropdown {
+    flex: 1;
+    background-color: #282828;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px top 50%;
+    background-size: 12px auto;
+    transition: background-color 0.2s;
+  }
+  
+  .select-dropdown:hover {
+    background-color: #333;
+  }
+  
+  .select-dropdown option {
+    background-color: #282828;
+    color: #fff;
+  }
+  
+  /* Visualization container */
+  .visualization-container {
+    grid-area: visualization;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    padding: 20px;
+    background-color: #181818;
+    border-radius: 8px;
+  }
+  
+  /* ================================
+     SIDEBAR STYLES
+     ================================ */
+  .sidebar {
     position: fixed;
     top: 0;
     left: -320px;
@@ -33,69 +167,69 @@ body {
     box-shadow: 2px 0 15px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-}
-
-.sidebar.active {
+  }
+  
+  .sidebar.active {
     left: 0;
-}
-
-.sidebar-header {
+  }
+  
+  .sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logo-container {
+  }
+  
+  .logo-container {
     display: flex;
     align-items: center;
     gap: 12px;
-}
-
-.logo-container svg {
+  }
+  
+  .logo-container svg {
     flex-shrink: 0;
-}
-
-.logo-container span {
+  }
+  
+  .logo-container span {
     font-size: 20px;
     font-weight: bold;
     color: #1db954;
-}
-
-.close-btn {
+  }
+  
+  .close-btn {
     background: none;
     border: none;
     color: #999;
     cursor: pointer;
     transition: color 0.2s;
-}
-
-.close-btn:hover {
+  }
+  
+  .close-btn:hover {
     color: #fff;
-}
-
-.sidebar-content {
+  }
+  
+  .sidebar-content {
     padding: 20px;
     overflow-y: auto;
     flex: 1;
-}
-
-.sidebar-content h3 {
+  }
+  
+  .sidebar-content h3 {
     margin-bottom: 15px;
     font-size: 16px;
     color: #999;
     text-transform: uppercase;
     letter-spacing: 1px;
-}
-
-.sidebar-albums {
+  }
+  
+  .sidebar-albums {
     display: flex;
     flex-direction: column;
     gap: 10px;
-}
-
-.sidebar-album {
+  }
+  
+  .sidebar-album {
     padding: 12px 15px;
     background-color: #181818;
     border-radius: 6px;
@@ -104,21 +238,21 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-}
-
-.sidebar-album:hover {
+  }
+  
+  .sidebar-album:hover {
     background-color: #282828;
-}
-
-.sidebar-album.active {
+  }
+  
+  .sidebar-album.active {
     background-color: #1db954;
-}
-
-.sidebar-album.active .album-name {
+  }
+  
+  .sidebar-album.active .album-name {
     color: #000;
-}
-
-.album-icon {
+  }
+  
+  .album-icon {
     width: 36px;
     height: 36px;
     border-radius: 4px;
@@ -126,14 +260,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.album-name {
+  }
+  
+  .album-name {
     font-size: 14px;
     font-weight: 500;
-}
-
-.toggle-sidebar-btn {
+  }
+  
+  .toggle-sidebar-btn {
     position: fixed;
     top: 20px;
     left: 20px;
@@ -150,195 +284,61 @@ body {
     z-index: 100;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     transition: transform 0.2s, background-color 0.2s;
-}
-
-.toggle-sidebar-btn:hover {
+  }
+  
+  .toggle-sidebar-btn:hover {
     transform: scale(1.1);
     background-color: #1ed760;
-}
-
-/* Layout */
-/* App container */
-.app-container {
-    min-height: 100vh;
-    padding: 20px 40px 100px 40px; /* Extra padding at bottom for bottom wave */
-    margin-left: 0;
-    transition: margin-left 0.3s ease;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr auto;
-    grid-template-areas: 
-        "header"
-        "metrics"
-        "visualization"
-        "subjects";
-    gap: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.app-container.sidebar-active {
-    margin-left: 320px;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Main content area */
-.main-content {
-    flex: 1;
-    background-color: #181818;
-    border-radius: 8px;
-    padding: 20px;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr auto;
-    grid-template-areas: 
-        "header"
-        "metrics"
-        "visualization"
-        "subjects";
-    gap: 20px;
-    max-height: calc(100vh - 40px);
-    overflow-y: auto;
-    margin-left: 40px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Header info */
-.header-info {
-    grid-area: header;
-    padding: 20px;
-    background-color: #181818;
-    border-radius: 8px;
-    margin-top: 20px;
-}
-
-.header-nav {
-    display: flex;
-    margin-bottom: 15px;
-}
-
-.back-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #282828;
-    border: none;
-    color: #fff;
-    padding: 8px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-.back-button:hover {
-    background: #333;
-    transform: translateY(-2px);
-}
-
-.current-selection {
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.subtitle {
-    color: #b3b3b3;
-    font-size: 14px;
-}
-
-/* Metrics selection */
-.metrics-selection {
-    grid-area: metrics;
-    padding: 20px;
-    background-color: #181818;
-    border-radius: 8px;
-}
-
-.metrics-selection h3 {
-    margin-bottom: 10px;
-    font-size: 18px;
-    color: #e0e0e0;
-}
-
-.metrics-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.metric-chip {
-    background-color: #282828;
-    border-radius: 16px;
-    padding: 6px 12px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.metric-chip:hover {
-    background-color: #333;
-    transform: translateY(-2px);
-}
-
-.metric-chip.active {
-    background-color: #1db954;
-    color: #000;
-    box-shadow: 0 0 12px rgba(29, 185, 84, 0.4);
-}
-
-/* Visualization container */
-.visualization-container {
-    grid-area: visualization;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    padding: 20px;
-    background-color: #181818;
-    border-radius: 8px;
-}
-
-/* Chart container */
-.chart-container {
+  }
+  
+  /* ================================
+     CHART VISUALIZATION STYLES
+     ================================ */
+  .chart-container {
     height: 350px;
     width: 100%;
     background-color: #121212;
     border-radius: 8px;
     padding: 12px;
     position: relative;
-}
-
-/* D3 Chart styling */
-.axis path,
-.axis line {
-  stroke: #666 !important;
-  stroke-width: 1px !important;
-}
-
-.axis text {
-  fill: #b3b3b3 !important;
-  font-size: 12px !important;
-}
-
-.heart-rate-line {
+  }
+  
+  /* D3 Chart styling */
+  .axis path,
+  .axis line {
+    stroke: #666 !important;
+    stroke-width: 1px !important;
+  }
+  
+  .axis text {
+    fill: #b3b3b3 !important;
+    font-size: 12px !important;
+  }
+  
+  .heart-rate-line {
     fill: none;
     stroke: #1db954;
     stroke-width: 2.5px;
     filter: drop-shadow(0 0 2px rgba(29, 185, 84, 0.3));
-}
-
-.current-time-line {
+  }
+  
+  .current-time-line {
     stroke: #ff6b6b;
     stroke-width: 2px;
     stroke-dasharray: 4, 4;
-}
-
-.chart-tooltip {
+  }
+  
+  .chart-overlay {
+    fill: transparent;
+    cursor: crosshair;
+  }
+  
+  .hover-point {
+    fill: #1db954;
+    filter: drop-shadow(0 0 3px rgba(29, 185, 84, 0.7));
+  }
+  
+  .chart-tooltip {
     position: absolute;
     padding: 8px;
     background-color: rgba(0, 0, 0, 0.8);
@@ -349,17 +349,29 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 100;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-
-/* Waveform and Pulse side-by-side container */
-.waveform-and-pulse-container {
+  }
+  
+  .chart-tooltip.hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+  
+  .axis-label {
+    font-size: 12px;
+    fill: #b3b3b3;
+  }
+  
+  /* ================================
+     WAVEFORM VISUALIZATION STYLES
+     ================================ */
+  .waveform-and-pulse-container {
     display: flex;
     width: 100%;
     gap: 20px;
-}
-
-/* Waveform container */
-.waveform-container {
+  }
+  
+  /* Waveform container */
+  .waveform-container {
     position: relative;
     flex: 1;
     height: 150px;
@@ -367,20 +379,15 @@ body {
     border-radius: 8px;
     overflow: hidden;
     padding: 10px;
-}
-
-@keyframes pulse {
-    0% { transform: scaleY(1); }
-    100% { transform: scaleY(1.1); }
-}
-
-.waveform-bars {
+  }
+  
+  .waveform-bars {
     position: relative;
     height: 100%;
     width: 100%;
-}
-
-.waveform-center-line {
+  }
+  
+  .waveform-center-line {
     position: absolute;
     width: 100%;
     height: 1px;
@@ -388,28 +395,40 @@ body {
     top: 50%;
     left: 0;
     z-index: 1;
-}
-
-.waveform-bar {
+  }
+  
+  .waveform-animation {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .waveform-bar {
     position: absolute;
     border-radius: 1px;
     transition: height 0.3s ease;
-}
-
-.top-bar {
+  }
+  
+  .top-bar {
     bottom: calc(50% + 1px);
     transform-origin: bottom;
     border-radius: 1px 1px 0 0;
-}
-
-.bottom-bar {
+  }
+  
+  .bottom-bar {
     top: calc(50% + 1px);
     transform-origin: top;
     border-radius: 0 0 1px 1px;
-}
-
-/* Metric display */
-.metric-display {
+  }
+  
+  /* Animation for waveform bars */
+  @keyframes pulse {
+    0% { transform: scaleY(1); }
+    100% { transform: scaleY(1.1); }
+  }
+  
+  /* Metric display */
+  .metric-display {
     position: absolute;
     bottom: 10px;
     left: 10px;
@@ -418,9 +437,9 @@ body {
     border-radius: 4px;
     font-size: 14px;
     z-index: 10;
-}
-
-.waveform-labels {
+  }
+  
+  .waveform-labels {
     position: absolute;
     bottom: 5px;
     right: 10px;
@@ -430,13 +449,16 @@ body {
     padding: 3px 8px;
     border-radius: 3px;
     z-index: 10;
-}
-
-/* Circular pulse visualization */
-.pulse-container {
+  }
+  
+  /* ================================
+     CIRCULAR WAVE VISUALIZATION STYLES
+     ================================ */
+  /* Main container */
+  .pulse-container {
     position: relative;
-    width: 200px;
-    height: 150px;
+    width: 280px;
+    height: 200px;
     background-color: #121212;
     border-radius: 8px;
     overflow: hidden;
@@ -444,64 +466,186 @@ body {
     justify-content: center;
     align-items: center;
     padding: 10px;
-}
-
-.pulse-circle {
-    width: 60px;
-    height: 60px;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Background glow effect */
+  .circular-bg-glow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(29, 185, 84, 0.15);
     border-radius: 50%;
-    background-color: rgba(29, 185, 84, 0.2);
-    position: absolute;
-    z-index: 5;
-    transition: transform 0.3s ease-out, background-color 0.3s, width 0.3s, height 0.3s;
-}
-
-.circular-wave {
-    position: absolute;
-    width: 150px;
-    height: 150px;
+    filter: blur(30px);
     z-index: 1;
-}
-
-.circular-wave-bar {
+    transition: background-color 0.5s, box-shadow 0.5s;
+  }
+  
+  /* Background circles */
+  .circular-bg-circle {
     position: absolute;
-    top: 50%;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 2;
+    animation: rotate-bg 10s linear infinite;
+  }
+  
+  @keyframes rotate-bg {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Frequency bars container */
+  .frequency-bars-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+  }
+  
+  /* Individual frequency bar */
+  .frequency-bar {
+    position: absolute;
+    bottom: 50%;
     left: 50%;
-    transform-origin: bottom;
-    width: 2px;
+    width: 1px;
+    height: 150px;
+    transform-origin: bottom center;
+    z-index: 3;
+    transition: opacity 0.3s;
+  }
+  
+  /* Inner bar (animated part) */
+  .frequency-bar-inner {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30px; /* Initial height */
     background-color: #1db954;
-    transform: rotate(var(--rotation)) translateY(-50%);
-    max-height: 30px;
-}
-
-/* Player controls */
-.player-controls {
+    transition: height 0.05s ease, background-color 0.2s;
+  }
+  
+  /* Glow effect for bars */
+  .frequency-bar-glow {
+    position: absolute;
+    bottom: 0;
+    left: -1px;
+    width: 3px;
+    height: 30px;
+    background-color: #1db954;
+    border-radius: 3px;
+    filter: blur(4px);
+    opacity: 0.5;
+    transition: height 0.08s ease, background-color 0.2s, opacity 0.2s;
+  }
+  
+  /* Central pulse circle */
+  .pulse-circle {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(29, 185, 84, 0.3); /* Green with transparency */
+    box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
+    z-index: 5;
+    transition: width 0.2s, height 0.2s, background-color 0.2s, box-shadow 0.2s;
+    animation: pulse-beat 1s ease-in-out infinite;
+  }
+  
+  /* Beat indicator (heart rate) */
+  .beat-indicator {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background-color: #4a90e2; /* Blue instead of red */
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.7);
+    border-radius: 50%;
+    z-index: 6;
+    opacity: 0;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  
+  /* Pulse beat animation */
+  @keyframes pulse-beat {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+  }
+  
+  /* Pulse rings */
+  .pulse-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 1px solid rgba(29, 185, 84, 0.3);
+    opacity: 0.5;
+    z-index: 4;
+    animation: pulse-ring 2s cubic-bezier(0.075, 0.82, 0.165, 1) infinite;
+    animation-delay: var(--delay, 0s);
+  }
+  
+  @keyframes pulse-ring {
+    0% { transform: scale(0.3); opacity: 0.7; }
+    100% { transform: scale(1.2); opacity: 0; }
+  }
+  
+  /* Value display */
+  .circular-value-display {
+    position: absolute;
+    z-index: 10;
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+    transition: transform 0.1s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .circular-value-display.pulse {
+    animation: value-pulse 0.3s ease;
+  }
+  
+  @keyframes value-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  
+  /* ================================
+     PLAYER CONTROLS STYLES
+     ================================ */
+  /* Player controls */
+  .player-controls {
     width: 100%;
     background-color: #121212;
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 20px;
-}
-
-/* Timeline styling */
-.timeline {
+  }
+  
+  /* Timeline styling */
+  .timeline {
     position: relative;
     height: 6px;
     background-color: #535353;
     border-radius: 3px;
     margin: 10px 0 15px 0;
     cursor: pointer;
-}
-
-.timeline-progress {
+  }
+  
+  .timeline-progress {
     height: 100%;
     background-color: #1db954;
     border-radius: 3px;
     width: 0%;
-}
-
-/* Timeline handle/circle for dragging */
-.timeline-handle {
+  }
+  
+  /* Timeline handle/circle for dragging */
+  .timeline-handle {
     position: absolute;
     top: 50%;
     left: 0%;
@@ -514,35 +658,35 @@ body {
     z-index: 10;
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
     transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
-}
-
-.timeline-handle:hover {
+  }
+  
+  .timeline-handle:hover {
     transform: translate(-50%, -50%) scale(1.2);
     box-shadow: 0 0 6px rgba(29, 185, 84, 0.7);
-}
-
-.timeline-handle.active {
+  }
+  
+  .timeline-handle.active {
     cursor: grabbing;
     transform: translate(-50%, -50%) scale(1.3);
     box-shadow: 0 0 8px rgba(29, 185, 84, 0.8);
-}
-
-.time-display {
+  }
+  
+  .time-display {
     display: flex;
     justify-content: space-between;
     font-size: 12px;
     color: #b3b3b3;
     margin-bottom: 15px;
-}
-
-.control-buttons {
+  }
+  
+  .control-buttons {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 24px;
-}
-
-.control-btn {
+  }
+  
+  .control-btn {
     background: none;
     border: none;
     color: #b3b3b3;
@@ -551,13 +695,13 @@ body {
     align-items: center;
     justify-content: center;
     transition: color 0.2s;
-}
-
-.control-btn:hover {
+  }
+  
+  .control-btn:hover {
     color: #fff;
-}
-
-.play-btn {
+  }
+  
+  .play-btn {
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -570,37 +714,37 @@ body {
     justify-content: center;
     transition: transform 0.2s, background-color 0.2s;
     margin: 0 15px;
-}
-
-.play-btn:hover {
+  }
+  
+  .play-btn:hover {
     transform: scale(1.05);
     background-color: #1ed760;
     box-shadow: 0 0 12px rgba(29, 185, 84, 0.4);
-}
-
-/* Playback options group */
-.playback-options {
+  }
+  
+  /* Playback options group */
+  .playback-options {
     display: flex;
     flex-direction: column;
     gap: 20px;
     background-color: #121212;
     border-radius: 8px;
     padding: 20px;
-}
-
-/* Volume control */
-.volume-control {
+  }
+  
+  /* Volume control */
+  .volume-control {
     display: flex;
     align-items: center;
     padding: 0 20px;
-}
-
-.volume-icon {
+  }
+  
+  .volume-icon {
     color: #b3b3b3;
     margin-right: 10px;
-}
-
-.volume-slider {
+  }
+  
+  .volume-slider {
     flex-grow: 1;
     height: 4px;
     -webkit-appearance: none;
@@ -608,23 +752,23 @@ body {
     background: #535353;
     border-radius: 2px;
     outline: none;
-}
-
-/* Playback speed control */
-.playback-control {
+  }
+  
+  /* Playback speed control */
+  .playback-control {
     display: flex;
     align-items: center;
     padding: 0 20px;
-}
-
-.speed-label {
+  }
+  
+  .speed-label {
     color: #b3b3b3;
     margin-right: 10px;
     font-size: 12px;
     min-width: 80px;
-}
-
-.speed-slider {
+  }
+  
+  .speed-slider {
     flex-grow: 1;
     height: 4px;
     -webkit-appearance: none;
@@ -632,17 +776,17 @@ body {
     background: #535353;
     border-radius: 2px;
     outline: none;
-}
-
-.speed-value {
+  }
+  
+  .speed-value {
     color: #b3b3b3;
     margin-left: 10px;
     font-size: 12px;
     min-width: 40px;
     text-align: right;
-}
-
-.volume-slider::-webkit-slider-thumb, .speed-slider::-webkit-slider-thumb {
+  }
+  
+  .volume-slider::-webkit-slider-thumb, .speed-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 16px;
@@ -650,25 +794,25 @@ body {
     border-radius: 50%;
     background: #1db954;
     cursor: pointer;
-}
-
-.volume-slider::-moz-range-thumb, .speed-slider::-moz-range-thumb {
+  }
+  
+  .volume-slider::-moz-range-thumb, .speed-slider::-moz-range-thumb {
     width: 16px;
     height: 16px;
     border-radius: 50%;
     background: #1db954;
     cursor: pointer;
     border: none;
-}
-
-.volume-control, .playback-control {
+  }
+  
+  .volume-control, .playback-control {
     display: flex;
     align-items: center;
     padding: 5px 20px;
     margin: 10px 0;
-}
-
-.volume-slider, .speed-slider {
+  }
+  
+  .volume-slider, .speed-slider {
     flex-grow: 1;
     height: 8px;
     -webkit-appearance: none;
@@ -677,150 +821,464 @@ body {
     border-radius: 2px;
     outline: none;
     margin: 0 15px;
-}
-
-/* Subjects panel */
-.subjects-panel {
-    grid-area: subjects;
-    background-color: #181818;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 70px; /* Extra space for bottom wave */
-}
-
-.subjects-panel h3 {
-    margin-bottom: 10px;
-    font-size: 18px;
-    color: #e0e0e0;
-}
-
-.subjects-list {
+  }
+  
+  /* Sound profile selector */
+  .sound-profile-container {
+    margin-top: 15px;
+    padding: 5px 20px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.subject-chip {
-    background-color: #282828;
-    border-radius: 16px;
-    padding: 6px 12px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.subject-chip:hover {
-    background-color: #333;
-    transform: translateY(-2px);
-}
-
-.subject-chip.active {
-    background-color: #1db954;
-    color: #000;
-    box-shadow: 0 0 12px rgba(29, 185, 84, 0.4);
-}
-
-/* Bottom wave animation */
-.bottom-wave-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .sound-profile-description {
+    color: #b3b3b3;
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  
+  /* ================================
+     BOTTOM WAVE STYLES
+     ================================ */
+  /* Bottom wave container */
+  .bottom-wave-container {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 50px;
+    height: 80px;
     overflow: hidden;
     z-index: 5;
-    opacity: 0.7;
-}
-
-.bottom-wave {
+    opacity: 0.8;
+  }
+  
+  .bottom-wave {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
     height: 100%;
-}
-
-#wave-path {
-    fill: rgba(29, 185, 84, 0.3);
-    transition: d 0.5s ease;
-    animation: wave-animation 3s infinite linear !important;
-}
-
-@keyframes wave-animation {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100px); }
   }
-
-/* Utility classes */
-.hidden {
-    display: none;
-}
-
-/* Loading indicator */
-.loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100px;
-    color: #1db954;
-    font-size: 14px;
-    background-color: rgba(0, 0, 0, 0.7);
+  
+  /* Wave paths with different styles */
+  .wave-path {
+    fill-opacity: 0.3;
+    transition: d 0.3s ease-out;
+  }
+  
+  .wave-path-1 {
+    fill: rgba(29, 185, 84, 0.25);
+  }
+  
+  .wave-path-2 {
+    fill: rgba(29, 185, 84, 0.15);
+  }
+  
+  .wave-path-3 {
+    fill: rgba(74, 144, 226, 0.2);
+  }
+  
+  /* ================================
+     CUSTOM INPUT COMPONENTS STYLES
+     ================================ */
+  /* Audio upload section */
+  .audio-upload-section {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #181818;
     border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+  
+  .audio-upload-section.hidden {
+    display: none;
+  }
+  
+  .audio-file-input {
+    display: none; /* Hide the default file input */
+  }
+  
+  .custom-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #2e2e2e;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  
+  .custom-upload-btn:hover {
+    background-color: #3e3e3e;
+  }
+  
+  .audio-details {
+    margin-top: 10px;
+  }
+  
+  .audio-file-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #b3b3b3;
+    margin-bottom: 5px;
+  }
+  
+  .play-uploaded-btn {
+    background-color: #1db954;
+    color: #000;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+  }
+  
+  .play-uploaded-btn:hover {
+    transform: scale(1.1);
+    background-color: #1ed760;
+  }
+  
+  /* Waveform drawing section */
+  .waveform-drawing-section {
+    margin-top: 15px;
+    transition: all 0.3s ease;
+  }
+  
+  .waveform-drawing-section.hidden {
+    display: none;
+  }
+  
+  .drawing-modal-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #2e2e2e;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 14px;
+  }
+  
+  .drawing-modal-btn:hover {
+    background-color: #3e3e3e;
+  }
+  
+  /* Drawing modal */
+  .drawing-modal {
+    display: none;
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 20px 40px;
-    z-index: 1000;
-}
-
-/* Responsive adjustments */
-@media (max-width: 992px) {
-    .main-content {
-        margin-left: 0;
-    }
-    
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    overflow: auto;
+  }
+  
+  .drawing-modal-content {
+    background-color: #181818;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 700px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  
+  .drawing-canvas-container {
+    margin: 20px 0;
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 100%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  }
+  
+  #waveform-drawing-canvas {
+    width: 100%;
+    height: 200px;
+    background-color: #121212;
+    cursor: crosshair;
+    display: block; /* Ensure it displays properly */
+    border: 1px solid #333;
+  }
+  
+  .drawing-controls {
+    margin-top: 20px;
+  }
+  
+  .control-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .drawing-control-btn {
+    background-color: #2e2e2e;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+    min-width: 80px;
+  }
+  
+  .drawing-control-btn:hover {
+    background-color: #3e3e3e;
+  }
+  
+  .color-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .color-selector label {
+    font-size: 14px;
+    color: #b3b3b3;
+  }
+  
+  .color-selector input[type="color"] {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+  }
+  
+  
+  .drawing-instructions {
+    margin: 15px 0;
+    font-size: 14px;
+    color: #b3b3b3;
+    line-height: 1.4;
+  }
+  
+  .button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .primary-btn {
+    background-color: #1db954;
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  
+  .primary-btn:hover {
+    background-color: #1ed760;
+    transform: translateY(-2px);
+  }
+  
+  .secondary-btn {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+  }
+  
+  .secondary-btn:hover {
+    background-color: #444;
+  }
+  
+  /* ================================
+     UTILITY CLASSES
+     ================================ */
+  .hidden {
+    display: none !important;
+  }
+  
+  .visuallyhidden { 
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+  
+  .clearfix:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  
+  /* ================================
+     RESPONSIVE STYLES
+     ================================ */
+  @media (max-width: 992px) {
     .app-container {
-        padding-left: 70px;
-        grid-gap: 15px;
+      padding-left: 70px;
+      grid-gap: 15px;
     }
     
     .sidebar {
-        width: 280px;
-    }
-
-}
-
-@media (max-width: 768px) {
-    .app-container {
-        padding: 10px 10px 80px 60px;
-    }
-    
-    .waveform-and-pulse-container {
-        flex-direction: column;
+      width: 280px;
     }
     
     .pulse-container {
-        width: 100%;
-        margin-top: 10px;
+      width: 240px;
+      height: 180px;
     }
     
-    .main-content {
-        padding: 15px;
-        gap: 15px;
+    .chart-container {
+      height: 300px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .app-container {
+      padding: 10px 10px 80px 60px;
     }
     
-    .metrics-chips, .subjects-list {
-        gap: 8px;
+    .waveform-and-pulse-container {
+      flex-direction: column;
     }
     
-    .metric-chip, .subject-chip {
-        font-size: 13px;
-        padding: 5px 10px;
+    .pulse-container {
+      width: 100%;
+      height: 180px;
+    }
+    
+    .visualization-container {
+      padding: 15px;
+    }
+    
+    .player-controls {
+      padding: 15px;
+    }
+    
+    .control-buttons {
+      gap: 15px;
+    }
+    
+    .playback-options {
+      padding: 15px;
     }
     
     .bottom-wave-container {
-        height: 40px;
+      height: 40px;
     }
+    
+    .chart-container {
+      height: 250px;
+      padding: 8px;
+    }
+    
+    .axis text {
+      font-size: 10px !important;
+    }
+    
+    .drawing-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  overflow: auto;
 }
+
+.drawing-modal-content {
+  background-color: #181818;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 700px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+    
+    .control-options {
+      flex-wrap: wrap;
+    }
+  }
+
+  .circular-wave .frequency-bar-inner[style*="hsl(0,"] {
+    background-color: #1db954 !important; /* Replace red with green */
+  }
+  
+  .circular-wave .frequency-bar-inner[style*="hsl(10,"] {
+    background-color: #25c268 !important; /* Light green */
+  }
+  
+  .circular-wave .frequency-bar-inner[style*="hsl(20,"] {
+    background-color: #2ecda6 !important; /* Teal */
+  }
+  
+  .circular-wave .frequency-bar-inner[style*="hsl(30,"] {
+    background-color: #33d8e3 !important; /* Light blue */
+  }
+  
+  .circular-wave .frequency-bar-inner[style*="hsl(40,"] {
+    background-color: #4a90e2 !important; /* Blue */
+  }
+  
+  .circular-wave .frequency-bar-inner[style*="hsl(50,"] {
+    background-color: #5470d6 !important; /* Purple-blue */
+  }
+  
+  .circular-wave .frequency-bar-glow[style*="hsl(0,"],
+  .circular-wave .frequency-bar-glow[style*="hsl(10,"],
+  .circular-wave .frequency-bar-glow[style*="hsl(20,"],
+  .circular-wave .frequency-bar-glow[style*="hsl(30,"],
+  .circular-wave .frequency-bar-glow[style*="hsl(40,"],
+  .circular-wave .frequency-bar-glow[style*="hsl(50,"] {
+    filter: blur(4px);
+    opacity: 0.7;
+    transition: height 0.08s ease, background-color 0.2s, opacity 0.2s;
+  }
+  
+  /* Background glow effect */
+  .circular-bg-glow {
+    background-color: rgba(29, 185, 84, 0.15);
+    box-shadow: 0 0 50px rgba(29, 185, 84, 0.4);
+  }
+  
+  /* Override any heart rate specific colors */
+  [id="demo-pulse-circle"] {
+    background-color: rgba(29, 185, 84, 0.3) !important;
+    box-shadow: 0 0 20px rgba(29, 185, 84, 0.5) !important;
+  }
+  
+  [id="demo-beat-indicator"] {
+    background-color: #4a90e2 !important;
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.7) !important;
+  }
