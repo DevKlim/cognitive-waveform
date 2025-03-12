@@ -1,0 +1,474 @@
+/**
+ * tutorial.css
+ * Styles for the tutorial experience
+ */
+
+/* Base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #121212;
+    color: #fff;
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* Tutorial Banner for albums.html */
+.tutorial-banner {
+    background: linear-gradient(135deg, #1db954, #1ed761);
+    border-radius: 8px;
+    margin: 20px 0 40px 0;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tutorial-banner:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+.tutorial-banner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M50 15L45 35 25 40 37 52 32 72 50 62 68 72 63 52 75 40 55 35z" fill="rgba(255,255,255,0.05)"/></svg>') repeat;
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+.tutorial-icon {
+    background-color: rgba(0, 0, 0, 0.3);
+    width: 64px;
+    height: 64px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 20px;
+    flex-shrink: 0;
+}
+
+.tutorial-content {
+    flex: 1;
+}
+
+.tutorial-label {
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 5px;
+}
+
+.tutorial-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 8px;
+}
+
+.tutorial-description {
+    color: rgba(0, 0, 0, 0.8);
+    font-size: 14px;
+    max-width: 80%;
+}
+
+.tutorial-btn {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.tutorial-btn:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Tutorial Page Styles */
+.tutorial-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px 100px;
+}
+
+.tutorial-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.tutorial-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-right: 20px;
+}
+
+.tutorial-logo svg {
+    width: 40px;
+    height: 40px;
+}
+
+.tutorial-logo-text {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1db954;
+}
+
+.tutorial-progress {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: #b3b3b3;
+}
+
+.progress-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.progress-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #333;
+    transition: background-color 0.3s ease;
+}
+
+.progress-dot.active {
+    background-color: #1db954;
+}
+
+.tutorial-content-container {
+    min-height: 60vh;
+}
+
+.tutorial-step {
+    display: none;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.tutorial-step.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tutorial-step-title {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    background: linear-gradient(90deg, #1db954, #4a90e2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.tutorial-step-description {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #e0e0e0;
+    margin-bottom: 30px;
+}
+
+.tutorial-illustration {
+    background-color: #181818;
+    border-radius: 12px;
+    padding: 30px;
+    margin: 30px 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.tutorial-footnote {
+    font-size: 14px;
+    color: #b3b3b3;
+    margin-top: 20px;
+    font-style: italic;
+}
+
+.tutorial-example {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.tutorial-example-label {
+    font-size: 14px;
+    color: #1db954;
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.tutorial-example-content {
+    color: #b3b3b3;
+}
+
+.tutorial-highlight {
+    background-color: rgba(29, 185, 84, 0.1);
+    color: #1db954;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.tutorial-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 60px;
+}
+
+.nav-btn {
+    background-color: #1e1e1e;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-btn:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.next-btn {
+    background-color: #1db954;
+    color: #000;
+}
+
+.next-btn:hover {
+    background-color: #1ed760;
+}
+
+/* Pulse Visualization Example */
+.example-pulse {
+    width: 100px;
+    height: 100px;
+    background-color: rgba(29, 185, 84, 0.3);
+    border-radius: 50%;
+    position: relative;
+    margin: 20px auto;
+    box-shadow: 0 0 30px rgba(29, 185, 84, 0.5);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.example-pulse::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    border-radius: 50%;
+    border: 2px solid rgba(29, 185, 84, 0.3);
+    animation: ring 2s ease-out infinite;
+    opacity: 0;
+}
+
+@keyframes ring {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
+/* Waveform Visualization Example */
+.example-waveform {
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px auto;
+    gap: 2px;
+}
+
+.waveform-bar {
+    width: 4px;
+    background-color: #1db954;
+    border-radius: 2px;
+    animation: barHeight 3s ease-in-out infinite;
+}
+
+.waveform-bar:nth-child(odd) {
+    animation-delay: 0.5s;
+}
+
+@keyframes barHeight {
+    0% { height: 20px; }
+    50% { height: 80px; }
+    100% { height: 20px; }
+}
+
+/* Line Chart Visualization Example */
+.example-chart {
+    width: 100%;
+    height: 150px;
+    position: relative;
+    margin: 20px auto;
+}
+
+.example-chart-line {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: #1db954;
+    stroke-width: 3;
+    animation: drawLine 4s ease-in-out infinite;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+}
+
+@keyframes drawLine {
+    0% { stroke-dashoffset: 1000; }
+    50% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: 1000; }
+}
+
+/* Unlocked animation */
+.unlock-animation {
+    text-align: center;
+    margin: 40px 0;
+}
+
+.unlock-icon {
+    font-size: 80px;
+    color: #1db954;
+    animation: unlockBounce 1s ease-in-out;
+}
+
+@keyframes unlockBounce {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.unlock-message {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 20px 0;
+    color: #1db954;
+}
+
+.start-btn {
+    background-color: #1db954;
+    color: #000;
+    border: none;
+    border-radius: 30px;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 20px;
+}
+
+.start-btn:hover {
+    background-color: #1ed760;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(29, 185, 84, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tutorial-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 25px 15px;
+    }
+
+    .tutorial-icon {
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+
+    .tutorial-description {
+        max-width: 100%;
+    }
+
+    .tutorial-btn {
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        margin-top: 20px;
+    }
+
+    .tutorial-step-title {
+        font-size: 24px;
+    }
+
+    .tutorial-step-description {
+        font-size: 16px;
+    }
+
+    .tutorial-illustration {
+        height: 200px;
+        padding: 15px;
+    }
+
+    .tutorial-navigation {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+}
