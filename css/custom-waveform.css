@@ -528,175 +528,198 @@
     display: block;
   }
 
-  /* Sound upload section */
+ /* ================================
+   SOUND UPLOAD SECTION STYLES
+   ================================ */
 .sound-upload-section {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: rgba(29, 185, 84, 0.05);
-    border-radius: 8px;
-    border: 1px solid rgba(29, 185, 84, 0.1);
-    transition: all 0.3s ease;
-  }
-  
-  .sound-upload-section:hover {
-    background-color: rgba(29, 185, 84, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  .sound-upload-header {
-    font-size: 16px;
-    margin-bottom: 8px;
-    color: #1db954;
-    font-weight: 600;
-  }
-  
-  .sound-upload-description {
-    font-size: 13px;
-    color: #b3b3b3;
-    margin-bottom: 15px;
-    line-height: 1.4;
-  }
-  
-  .sound-upload-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background-color: #2e2e2e;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 14px;
-    margin-bottom: 10px;
-    border: none;
-  }
-  
-  .sound-upload-btn:hover {
-    background-color: #1db954;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(29, 185, 84, 0.3);
-  }
-  
-  .sound-preview {
-    margin-top: 15px;
-    padding: 12px;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 6px;
-    animation: fadeIn 0.3s ease-in-out;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  .sound-file-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .sound-file-name {
-    font-size: 14px;
-    font-weight: 500;
-    color: #e0e0e0;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  
-  .sound-file-size {
-    font-size: 12px;
-    color: #b3b3b3;
-    background-color: rgba(0, 0, 0, 0.2);
-    padding: 2px 6px;
-    border-radius: 10px;
-  }
-  
+  margin-top: 20px;
+  padding: 15px;
+  background-color: rgba(29, 185, 84, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(29, 185, 84, 0.1);
+  transition: all 0.3s ease;
+}
+
+.sound-upload-section:hover {
+  background-color: rgba(29, 185, 84, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.sound-upload-header {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #1db954;
+  font-weight: 600;
+}
+
+.sound-upload-description {
+  font-size: 13px;
+  color: #b3b3b3;
+  margin-bottom: 15px;
+  line-height: 1.4;
+}
+
+.sound-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #2e2e2e;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  margin-bottom: 10px;
+  border: none;
+}
+
+.sound-upload-btn:hover {
+  background-color: #1db954;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(29, 185, 84, 0.3);
+}
+
+.sound-preview {
+  margin-top: 15px;
+  padding: 12px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sound-file-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sound-file-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e0e0e0;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sound-file-size {
+  font-size: 12px;
+  color: #b3b3b3;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.sound-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.play-sound-btn {
+  background-color: #1db954;
+  color: #000;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.play-sound-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(29, 185, 84, 0.4);
+}
+
+.sound-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #b3b3b3;
+}
+
+.sound-settings input[type="checkbox"] {
+  accent-color: #1db954;
+  width: 16px;
+  height: 16px;
+}
+
+.sound-settings select {
+  background-color: #2e2e2e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sound-settings select:hover {
+  background-color: #3e3e3e;
+}
+
+.sound-settings select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.4);
+}
+
+/* Sound profile container styling */
+.sound-profile-container {
+  margin-top: 15px;
+  padding: 5px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.dropdown-label {
+  color: #b3b3b3;
+  font-size: 14px;
+  min-width: 60px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
   .sound-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+    flex-direction: column;
+    align-items: flex-start;
   }
   
   .play-sound-btn {
-    background-color: #1db954;
-    color: #000;
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-  
-  .play-sound-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(29, 185, 84, 0.4);
+    align-self: center;
+    margin-bottom: 10px;
   }
   
   .sound-settings {
-    display: flex;
+    width: 100%;
+  }
+  
+  .sound-profile-container {
     flex-direction: column;
-    gap: 8px;
-    flex-grow: 1;
+    align-items: flex-start;
   }
-  
-  .sound-settings label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: #b3b3b3;
-  }
-  
-  .sound-settings input[type="checkbox"] {
-    accent-color: #1db954;
-    width: 16px;
-    height: 16px;
-  }
-  
-  .sound-settings select {
-    background-color: #2e2e2e;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 12px;
-    cursor: pointer;
-  }
-  
-  .sound-settings select:hover {
-    background-color: #3e3e3e;
-  }
-  
-  .sound-settings select:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.4);
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .sound-controls {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    
-    .play-sound-btn {
-      align-self: center;
-      margin-bottom: 10px;
-    }
-    
-    .sound-settings {
-      width: 100%;
-    }
-  }
+}
