@@ -1,11 +1,18 @@
 /**
  * main.js
  * Entry point for the visualizer application
+ * Updated with session storage management for custom datasets
  */
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Visualizer initialized');
+    
+    // Clear cached custom datasets on page reload
+    if (performance.navigation.type === 1) { // 1 = reload
+        console.log('Page reloaded, clearing cached custom datasets');
+        clearCachedCustomDatasets();
+    }
     
     // Check if we have a selected dataset from the albums page
     const selectedDataset = sessionStorage.getItem('selectedDataset');
@@ -38,6 +45,25 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
+ * Clear cached custom datasets on page reload
+ */
+function clearCachedCustomDatasets() {
+    // Store a list of the cached datasets
+    const cachedDatasets = JSON.parse(sessionStorage.getItem('cachedDatasets') || '[]');
+    
+    // If the page is being reloaded (not navigated to from another page)
+    if (performance.navigation.type === 1) {
+        // Remove the cached custom dataset data
+        cachedDatasets.forEach(dataset => {
+            sessionStorage.removeItem(`customDataset_${dataset.id}`);
+        });
+        
+        // Clear the cached datasets list
+        sessionStorage.removeItem('cachedDatasets');
+    }
+}
+
+/**
  * Set up UI components and event listeners
  */
 function setupUIComponents() {
@@ -50,12 +76,12 @@ function setupUIComponents() {
     // Skip forward/back buttons
     const skipForwardBtn = document.getElementById('skip-forward-btn');
     if (skipForwardBtn) {
-        skipForwardBtn.addEventListener('click', () => skipTime(30));
+        skipForwardBtn.addEventListener('click', () => skipByPercentage(5)); // Skip forward 5% of total duration
     }
     
     const skipBackBtn = document.getElementById('skip-back-btn');
     if (skipBackBtn) {
-        skipBackBtn.addEventListener('click', () => skipTime(-30));
+        skipBackBtn.addEventListener('click', () => skipByPercentage(-5)); // Skip back 5% of total duration
     }
     
     // Volume slider
@@ -124,4 +150,61 @@ function setupUIComponents() {
             initBottomWave();
         }
     }, 250));
+}
+
+/**
+ * Process custom dataset uploaded by user
+ */
+function processCustomDataset(customDataset, displayName) {
+    // Show loading indicator
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
+        loadingIndicator.classList.add('hidden');
+    }
+    
+    // Extract data and metadata
+    const data = customDataset.data;
+    const metricName = customDataset.metricName;
+    
+    // Update dataset title
+    const currentDataset = document.getElementById('current-dataset');
+    if (currentDataset && displayName) {
+        currentDataset.textContent = displayName;
+    }
+    
+    console.log('Processing custom dataset with metric:', metricName);
+    
+    // Save to global state
+    app.data.all = data;
+    app.data.metrics = [metricName];
+    app.currentDataType = displayName;
+    
+    // Get all subjects
+    let subjects = [...new Set(data.map(d => d.subject))];
+    
+    // Move "Average (All Subjects)" to the first position if it exists
+    const avgIndex = subjects.indexOf("Average (All Subjects)");
+    if (avgIndex > -1) {
+        subjects = ["Average (All Subjects)", ...subjects.slice(0, avgIndex), ...subjects.slice(avgIndex + 1)];
+    }
+    
+    // Update UI
+    updateMetricDropdown([metricName]);
+    updateSubjectDropdown(subjects);
+    
+    // Default selection - always use Average when available
+    if (subjects.includes("Average (All Subjects)")) {
+        app.currentSubject = "Average (All Subjects)";
+        const currentSubject = document.getElementById('current-subject');
+        if (currentSubject) currentSubject.textContent = "Average (All Subjects)";
+    } else if (subjects.length > 0) {
+        app.currentSubject = subjects[0];
+        const currentSubject = document.getElementById('current-subject');
+        if (currentSubject) currentSubject.textContent = subjects[0];
+    }
+    
+    app.currentMetric = metricName;
+    
+    // Reset visualizations
+    resetPlayback();
 }

@@ -1,7 +1,10 @@
 /**
  * playback-controls.js
- * Handles playback controls and timeline interaction
+ * Updated with standardized playback duration and percentage-based skipping
  */
+
+// Standard playback duration in seconds
+const STANDARD_PLAYBACK_DURATION = 20; // seconds
 
 /**
  * Toggle play/pause
@@ -24,20 +27,21 @@ function togglePlayback() {
             setCurrentTime(0);
         }
         
+        // Calculate step size based on standardized playback duration
+        const totalDataDuration = maxTime; // Total duration in data units
+        const baseStepSize = totalDataDuration / (STANDARD_PLAYBACK_DURATION * 20); // 20 updates per second
+        
         // Start playback
         app.playbackInterval = setInterval(() => {
             const maxTime = app.data.filtered.length > 0 ?
                 app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0 : 0;
+            
             if (app.currentTime >= maxTime) {
                 stopPlayback();
             } else {
-                // Determine playback speed based on data density
-                const timeStep = app.data.filtered.length > 1 
-                    ? (app.data.filtered[1].timestamp - app.data.filtered[0].timestamp) 
-                    : 5;
-                
                 // Apply the user-controlled playback speed
-                setCurrentTime(app.currentTime + (timeStep * app.playbackSpeed));
+                const stepSize = baseStepSize * app.playbackSpeed;
+                setCurrentTime(app.currentTime + stepSize);
                 
                 // Update sound and audio-reactive visualizations
                 updateSonification();
@@ -62,7 +66,27 @@ function stopPlayback() {
 }
 
 /**
+ * Skip forward/back by percentage
+ * @param {number} percentageSkip - Percentage of the total duration to skip (positive or negative)
+ */
+function skipByPercentage(percentageSkip) {
+    const maxTime = app.data.filtered.length > 0 ?
+        app.data.filtered[app.data.filtered.length - 1]?.timestamp || 0 : 0;
+    
+    // Calculate skip amount in time units (5% of total duration)
+    const skipAmount = (maxTime * (percentageSkip / 100));
+    
+    // Calculate new time and ensure it's within bounds
+    const newTime = Math.max(0, Math.min(maxTime, app.currentTime + skipAmount));
+    
+    // Set current time to the new position
+    setCurrentTime(newTime);
+}
+
+/**
  * Skip forward/back
+ * @param {number} seconds - Time to skip (positive or negative)
+ * @deprecated Use skipByPercentage instead
  */
 function skipTime(seconds) {
     const maxTime = app.data.filtered.length > 0 ?
@@ -305,7 +329,7 @@ function initButtonHoldFeature() {
       holdStartTime = Date.now();
       
       // Initial skip forward
-      skipTime(500);
+      skipByPercentage(5);
       
       // Set up interval for continuous skipping
       forwardInterval = setTimeout(function() {
@@ -318,7 +342,7 @@ function initButtonHoldFeature() {
           skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
           
           // Skip with increasing speed
-          skipTime(1 * skipSpeed);
+          skipByPercentage(100000 * skipSpeed);
           
           // Update visualization without playing
           updateWaveform();
@@ -369,7 +393,7 @@ function initButtonHoldFeature() {
       holdStartTime = Date.now();
       
       // Initial skip backward
-      skipTime(-5);
+      skipByPercentage(-5);
       
       // Set up interval for continuous skipping
       backwardInterval = setTimeout(function() {
@@ -382,7 +406,7 @@ function initButtonHoldFeature() {
           skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
           
           // Skip with increasing speed
-          skipTime(-1 * skipSpeed);
+          skipByPercentage(-5 * skipSpeed);
           
           // Update visualization without playing
           updateWaveform();
@@ -433,14 +457,14 @@ function initButtonHoldFeature() {
       wasPlaying = app.isPlaying;
       holdStartTime = Date.now();
       
-      skipTime(500);
+      skipByPercentage(5);
       
       forwardInterval = setTimeout(function() {
         if (wasPlaying) stopPlayback();
         
         forwardInterval = setInterval(function() {
           skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
-          skipTime(1 * skipSpeed);
+          skipByPercentage(1 * skipSpeed);
           updateWaveform();
           updateCircularWave();
         }, 50);
@@ -466,14 +490,14 @@ function initButtonHoldFeature() {
       wasPlaying = app.isPlaying;
       holdStartTime = Date.now();
       
-      skipTime(-500);
+      skipByPercentage(-5);
       
       backwardInterval = setTimeout(function() {
         if (wasPlaying) stopPlayback();
         
         backwardInterval = setInterval(function() {
           skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
-          skipTime(-1 * skipSpeed);
+          skipByPercentage(-1 * skipSpeed);
           updateWaveform();
           updateCircularWave();
         }, 50);

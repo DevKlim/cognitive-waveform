@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognify - Upload Dataset</title>
+    <link rel="stylesheet" href="css/albums.css">
+    <link rel="stylesheet" href="css/upload.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 15L45 35 25 40 37 52 32 72 50 62 68 72 63 52 75 40 55 35z' fill='%231db954'/></svg>">
+</head>
+<body>
+    <!-- UPLOAD DATASET SCREEN -->
+    <div id="upload-selection" class="album-selection">
+        <div class="album-header">
+            <div class="logo-small">
+                <svg width="36" height="36" viewBox="0 0 24 24">
+                    <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" fill="#1db954" />
+                </svg>
+                <span>Cognify</span>
+            </div>
+            <h2>Upload Your Dataset</h2>
+        </div>
+
+        <div class="back-navigation">
+            <a href="albums.html" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z" fill="currentColor"/>
+                </svg>
+                Back to Datasets
+            </a>
+        </div>
+        
+        <!-- Upload instructions -->
+        <div class="upload-instructions">
+            <div class="instruction-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#1db954">
+                    <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                </svg>
+            </div>
+            <div class="instruction-content">
+                <h3>Upload Your Stress Dataset</h3>
+                <p>Upload a CSV file containing time-series data for stress-related measurements. Your file should include:</p>
+                <ul>
+                    <li>A timestamp column (time, date, or sequence)</li>
+                    <li>At least one measurement column (heart rate, GSR, etc.)</li>
+                    <li>Optional: subject/participant column if multiple subjects</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Upload form -->
+        <div class="upload-section">
+            <div class="upload-area" id="upload-area">
+                <input type="file" id="csv-file" accept=".csv" hidden>
+                <div class="upload-prompt">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="#1db954">
+                        <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                    </svg>
+                    <h3>Drag & Drop Your CSV File</h3>
+                    <p>or</p>
+                    <button id="browse-button" class="browse-button">Browse Files</button>
+                </div>
+                <div id="file-info" class="file-info hidden">
+                    <div class="file-preview">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="#1db954">
+                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        </svg>
+                        <div class="file-details">
+                            <span id="file-name">No file selected</span>
+                            <span id="file-size"></span>
+                        </div>
+                    </div>
+                    <button id="remove-file" class="remove-file">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data preview and configuration -->
+        <div id="data-configuration" class="data-configuration hidden">
+            <h3>Configure Your Dataset</h3>
+            
+            <!-- Data preview table -->
+            <div class="preview-section">
+                <h4>Preview</h4>
+                <div class="preview-table-container">
+                    <table id="preview-table" class="preview-table"></table>
+                </div>
+            </div>
+            
+            <!-- Configuration options -->
+            <div class="config-section">
+                <h4>Configuration</h4>
+                
+                <div class="config-item">
+                    <label for="timestamp-column">Timestamp Column:</label>
+                    <select id="timestamp-column" class="config-select"></select>
+                    <div class="tooltip">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        <span class="tooltiptext">Select the column that represents time (required)</span>
+                    </div>
+                </div>
+                
+                <div class="config-item">
+                    <label for="metric-column">Metric Column:</label>
+                    <select id="metric-column" class="config-select"></select>
+                    <div class="tooltip">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        <span class="tooltiptext">Select the column containing your stress data (required)</span>
+                    </div>
+                </div>
+                
+                <div class="config-item">
+                    <label for="metric-name">Custom Metric Name:</label>
+                    <input type="text" id="metric-name" class="config-input" placeholder="e.g., Heart Rate (BPM)">
+                </div>
+                
+                <div class="config-item">
+                    <label for="subject-column">Subject Column:</label>
+                    <select id="subject-column" class="config-select">
+                        <option value="">None (Single Subject)</option>
+                    </select>
+                    <div class="tooltip">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        <span class="tooltiptext">If your dataset includes multiple subjects, select the column that identifies them</span>
+                    </div>
+                </div>
+                
+                <div class="config-item">
+                    <label for="dataset-name">Dataset Name:</label>
+                    <input type="text" id="dataset-name" class="config-input" placeholder="e.g., My Stress Study">
+                </div>
+
+                <div class="config-item checkbox-item">
+                    <label for="create-average">
+                        <input type="checkbox" id="create-average" checked>
+                        Generate average across subjects
+                    </label>
+                    <div class="tooltip">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        <span class="tooltiptext">Calculate and display an average of all subjects' data</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action buttons -->
+            <div class="action-buttons">
+                <button id="visualize-button" class="primary-button" disabled>Visualize Data</button>
+                <button id="cancel-button" class="secondary-button">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Error modal -->
+    <div id="error-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Error</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="error-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="error-ok" class="primary-button">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p>Processing your data...</p>
+    </div>
+    
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <!-- Upload Page JavaScript -->
+    <script src="js/upload.js"></script>
+</body>
+</html>

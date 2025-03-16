@@ -119,13 +119,89 @@ function loadCSVFile(filePath, displayName) {
         currentDataset.textContent = displayName;
     }
     
-    console.log('Loading CSV from:', filePath);
+    console.log('Loading dataset:', filePath);
     app.currentFile = filePath;
+    
+    // Handle custom dataset from upload page
+    if (filePath === 'custom_dataset') {
+        console.log('Loading custom dataset from session storage');
+        // Get custom dataset from session storage
+        const customDatasetJSON = sessionStorage.getItem('customDataset');
+        
+        if (!customDatasetJSON) {
+            console.error('Custom dataset not found in session storage');
+            alert('Error loading custom dataset. Please try uploading again.');
+            window.location.href = 'albums.html';
+            return;
+        }
+        
+        try {
+            // Parse the JSON data
+            const customDataset = JSON.parse(customDatasetJSON);
+            
+            // Process custom dataset
+            processCustomDataset(customDataset, displayName || 'Custom Dataset');
+            
+            // Update sidebar active state
+            updateSidebar();
+            
+            // Hide loading indicator
+            if (loadingIndicator) {
+                loadingIndicator.classList.add('hidden');
+            }
+            
+            return;
+        } catch (error) {
+            console.error('Error parsing custom dataset:', error);
+            alert('Error loading custom dataset. Please try uploading again.');
+            window.location.href = 'albums.html';
+            return;
+        }
+    }
+    // Handle cached custom datasets
+    else if (filePath.startsWith('customDataset_')) {
+        console.log('Loading cached custom dataset:', filePath);
+        // Get custom dataset from session storage
+        const customDatasetJSON = sessionStorage.getItem(filePath);
+        
+        if (!customDatasetJSON) {
+            console.error('Cached custom dataset not found in session storage');
+            alert('Dataset has expired or was not found. Please upload again.');
+            window.location.href = 'albums.html';
+            return;
+        }
+        
+        try {
+            // Parse the JSON data
+            const customDataset = JSON.parse(customDatasetJSON);
+            
+            // Process custom dataset
+            processCustomDataset(customDataset, displayName || 'Custom Dataset');
+            
+            // Update sidebar active state
+            updateSidebar();
+            
+            // Store this as current dataset for simplicity
+            sessionStorage.setItem('customDataset', customDatasetJSON);
+            
+            // Hide loading indicator
+            if (loadingIndicator) {
+                loadingIndicator.classList.add('hidden');
+            }
+            
+            return;
+        } catch (error) {
+            console.error('Error parsing cached custom dataset:', error);
+            alert('Error loading dataset. Please upload again.');
+            window.location.href = 'albums.html';
+            return;
+        }
+    }
     
     // Update sidebar active state
     updateSidebar();
     
-    // Use D3 to fetch & parse CSV
+    // Regular CSV file loading for non-custom datasets
     d3.csv(filePath)
         .then(data => {
             // Check if we got valid data
@@ -136,7 +212,7 @@ function loadCSVFile(filePath, displayName) {
             console.log('CSV loaded successfully with headers:', Object.keys(data[0]));
             processData(data, displayName || 'Dataset');
             
-            // Hide loading indicator immediately after processing data
+            // Hide loading indicator
             if (loadingIndicator) {
                 loadingIndicator.classList.add('hidden');
             }
@@ -152,7 +228,7 @@ function loadCSVFile(filePath, displayName) {
             // Alert user
             alert(`Error loading data: ${error.message}`);
             
-            // Create mock data
+            // Create mock data as fallback
             createMockData();
         });
 }

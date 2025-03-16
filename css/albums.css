@@ -308,3 +308,38 @@ body {
         align-self: flex-start;
     }
 }
+
+/* Add to albums.css */
+
+/* Upload card styling */
+.upload-card .album-cover {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    background-color: transparent !important;
+    transition: all 0.3s ease;
+}
+
+.upload-card:hover .album-cover {
+    border-color: #1db954;
+    background-color: rgba(29, 185, 84, 0.1) !important;
+}
+
+.upload-card .album-cover-img {
+    background: none !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-card .album-cover-img svg {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.upload-card:hover .album-cover-img svg {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.upload-card .album-title {
+    color: #1db954;
+}

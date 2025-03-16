@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Load dataset configurations from JSON
+ * Load dataset configurations from JSON and session storage
  */
 function loadDatasetConfigurations() {
     fetch('data.json')
@@ -19,16 +19,34 @@ function loadDatasetConfigurations() {
             const datasets = data.files.map(file => ({
                 name: file.displayName || file.name,
                 path: file.path,
-                color: generateColorFromString(file.name)
+                color: generateColorFromString(file.name),
+                isCustom: false
             }));
             
-            // Initialize album cards with the datasets
-            initAlbumCards(datasets);
+            // Load any custom datasets from session storage
+            const cachedDatasets = JSON.parse(sessionStorage.getItem('cachedDatasets') || '[]');
+            
+            const customDatasets = cachedDatasets.map(dataset => ({
+                name: dataset.name,
+                path: `customDataset_${dataset.id}`,
+                color: dataset.color || generateColorFromString(dataset.name),
+                isCustom: true
+            }));
+            
+            // Combine both datasets
+            const allDatasets = [...datasets, ...customDatasets];
+            
+            // Initialize album cards with all datasets
+            initAlbumCards(allDatasets);
+            
+            // Add upload dataset card
+            addUploadDatasetCard();
         })
         .catch(error => {
             console.error('Error loading dataset configurations:', error);
             // Fallback to static HTML album cards that may be in the page
             initAlbumCards();
+            addUploadDatasetCard();
         });
 }
 
@@ -128,6 +146,40 @@ function initAlbumCards(datasets) {
             }, 500);
         });
     });
+}
+
+/**
+ * Add upload dataset card to the album grid
+ */
+function addUploadDatasetCard() {
+    const albumGrid = document.getElementById('album-grid');
+    if (!albumGrid) return;
+    
+    // Create the upload card
+    const uploadCard = document.createElement('div');
+    uploadCard.className = 'album-card upload-card';
+    
+    uploadCard.innerHTML = `
+        <div class="album-cover upload-cover">
+            <div class="album-cover-img">
+                <svg width="50%" height="50%" viewBox="0 0 24 24" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="rgba(255,255,255,0.8)" />
+                </svg>
+            </div>
+        </div>
+        <div class="album-info">
+            <div class="album-title">Upload Dataset</div>
+            <div class="album-artist">Add your own data</div>
+        </div>
+    `;
+    
+    // Add click event
+    uploadCard.addEventListener('click', () => {
+        window.location.href = 'upload.html';
+    });
+    
+    // Add to grid
+    albumGrid.appendChild(uploadCard);
 }
 
 /**
