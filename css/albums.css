@@ -1,103 +1,256 @@
 /**
- * albums.css
- * Styles for the dataset selection (albums) page including tutorial banner
+ * albums.css - Optimized
+ * Focused styles for the album selection screens
  */
+
+/* Import base fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
 
 /* Base styles */
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: #121212;
-    color: #fff;
-    line-height: 1.5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #121212;
+  color: #fff;
+  line-height: 1.5;
 }
 
-.album-selection {
-    width: 100%;
-    min-height: 100vh;
-    padding: 30px;
-    overflow-y: auto;
-}
-
-.album-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 50px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logo-small {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: bold;
-    font-size: 24px;
-    color: #1db954;
-}
-
-.logo-small svg {
-    animation: subtle-pulse 3s infinite alternate;
-}
-
-@keyframes subtle-pulse {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.05); }
-}
-
-.album-header h2 {
-    font-size: 32px;
-    font-weight: 700;
+h1, h2, h3, .logo-small span, .app-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* ================================
-   TUTORIAL BANNER STYLES
+   ALBUM SELECTION SCREEN
    ================================ */
-.tutorial-banner {
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
-  margin: 0 0 30px 0;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid rgba(29, 185, 84, 0.3);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 10px rgba(29, 185, 84, 0.1);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+.album-selection {
+  width: 100%;
+  min-height: 100vh;
+  padding: 30px;
+  overflow-y: auto;
 }
 
-.tutorial-banner::after {
-  content: '';
+.album-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 50px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo-small {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: bold;
+  font-size: 24px;
+  color: #1db954;
+}
+
+.logo-small svg {
+  animation: subtle-pulse 3s infinite alternate;
+}
+
+@keyframes subtle-pulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(29, 185, 84, 0.3)); }
+  100% { transform: scale(1.05); filter: drop-shadow(0 0 10px rgba(29, 185, 84, 0.5)); }
+}
+
+.album-header h2 {
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #ffffff 0%, #b3b3b3 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Album grid styling */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 30px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Album card styling */
+.album-card {
+  background: linear-gradient(145deg, rgba(24, 24, 24, 0.8), rgba(30, 30, 30, 0.8));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  animation: fadeInUp 0.5s ease forwards;
+  opacity: 0;
+}
+
+/* Simplified hover effect - removed play button overlay for cleaner design */
+.album-card:hover {
+  transform: translateY(-10px);
+  background: linear-gradient(145deg, rgba(30, 30, 30, 0.8), rgba(40, 40, 40, 0.8));
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Album cover styling */
+.album-cover {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* 1:1 aspect ratio */
+  margin-bottom: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  transform: translateZ(0);
+}
+
+.album-card:hover .album-cover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+.album-cover-img {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, transparent 0%, rgba(29, 185, 84, 0.03) 50%, transparent 100%);
-  animation: shine 3s infinite;
-  z-index: 1;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes shine {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.album-card:hover .album-cover-img {
+  transform: scale(1.05);
+}
+
+/* Album info styling */
+.album-info {
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.album-title {
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: #fff;
+  transition: color 0.3s ease;
+}
+
+.album-artist {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.album-card:hover .album-info {
+  transform: translateY(-5px);
+}
+
+.album-card:hover .album-title {
+  color: #1db954;
+}
+
+/* Upload card styling */
+.upload-card {
+  background: linear-gradient(145deg, rgba(18, 18, 18, 0.8), rgba(25, 25, 25, 0.8));
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+}
+
+.upload-card:hover {
+  background: linear-gradient(145deg, rgba(20, 20, 20, 0.8), rgba(30, 30, 30, 0.8));
+  border: 2px dashed rgba(29, 185, 84, 0.3);
+}
+
+.upload-card .album-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(29, 185, 84, 0.05);
+  border: 2px dashed rgba(29, 185, 84, 0.2);
+  box-shadow: none;
+}
+
+.upload-card:hover .album-cover {
+  background-color: rgba(29, 185, 84, 0.1);
+  border-color: rgba(29, 185, 84, 0.4);
+}
+
+.upload-card .album-cover-img {
+  background: none;
+}
+
+.upload-card .album-title {
+  color: #1db954;
+}
+
+.upload-card:hover .album-title {
+  text-shadow: 0 0 10px rgba(29, 185, 84, 0.5);
+}
+
+.upload-card .album-cover-img svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40%;
+  height: 40%;
+  fill: rgba(29, 185, 84, 0.7);
+  transition: all 0.3s ease;
+}
+
+.upload-card:hover .album-cover-img svg {
+  transform: translate(-50%, -50%) scale(1.1);
+  fill: rgba(29, 185, 84, 1);
+}
+
+/* Tutorial banner */
+.tutorial-banner {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(18, 18, 18, 0.8) 0%, rgba(24, 24, 24, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(29, 185, 84, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(29, 185, 84, 0.1);
+  border-radius: 12px;
+  margin: 0 0 30px 0;
+  padding: 20px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
 .tutorial-banner:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(29, 185, 84, 0.2);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35), 0 0 20px rgba(29, 185, 84, 0.15);
   border-color: rgba(29, 185, 84, 0.5);
 }
 
 .tutorial-icon {
-  background-color: #1db954;
+  background: linear-gradient(45deg, #1db954, #1ed760);
+  box-shadow: 0 0 20px rgba(29, 185, 84, 0.3);
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -108,7 +261,6 @@ body {
   flex-shrink: 0;
   position: relative;
   z-index: 2;
-  box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
 }
 
 .tutorial-content {
@@ -131,8 +283,9 @@ body {
 }
 
 .tutorial-title {
-  font-size: 20px;
+  font-family: 'Montserrat', sans-serif;
   font-weight: 700;
+  font-size: 20px;
   margin-bottom: 5px;
   color: #fff;
 }
@@ -145,7 +298,7 @@ body {
 }
 
 .tutorial-btn {
-  background-color: #1db954;
+  background: linear-gradient(90deg, #1db954, #1ed760);
   color: #000;
   font-weight: 600;
   padding: 10px 20px;
@@ -161,6 +314,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  border: none;
 }
 
 .tutorial-btn:hover {
@@ -169,95 +323,101 @@ body {
   box-shadow: 0 6px 15px rgba(29, 185, 84, 0.4);
 }
 
-.tutorial-btn::after {
-  content: '→';
-  font-size: 18px;
-  margin-left: 5px;
-  transition: transform 0.2s;
+/* ================================
+   LOADING SCREEN
+   ================================ */
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(-45deg, #121212, #181818, #121212, #0a0a0a);
+  background-size: 400% 400%;
+  animation: gradient-bg 15s ease infinite;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 }
 
-.tutorial-btn:hover::after {
-  transform: translateX(3px);
+@keyframes gradient-bg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Album grid styling */
-.album-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 30px;
+.loading-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 40px;
+  position: relative;
+  z-index: 10;
 }
 
-.album-card {
-    background-color: #181818;
-    border-radius: 8px;
-    padding: 16px;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.app-title {
+  font-size: 72px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #1db954, #4a90e2);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -2px;
+  margin: 20px 0;
+  position: relative;
 }
 
-.album-card:hover {
-    background-color: #282828;
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+.loading-bar-container {
+  width: 300px;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 30px auto;
+  position: relative;
 }
 
-.album-cover {
-    position: relative;
-    width: 100%;
-    padding-bottom: 100%; /* 1:1 aspect ratio */
-    margin-bottom: 16px;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+.loading-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #1db954, #4a90e2);
+  border-radius: 3px;
+  animation: loading-progress 3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: forwards;
+  position: relative;
+  overflow: hidden;
 }
 
-.album-cover-img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.5s ease;
+@keyframes loading-progress {
+  0% { width: 0%; }
+  40% { width: 40%; }
+  60% { width: 60%; }
+  80% { width: 80%; }
+  100% { width: 100%; }
 }
 
-.album-card:hover .album-cover-img {
-    transform: scale(1.05);
+.loading-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  margin-top: 30px;
+  line-height: 1.7;
+  max-width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
 }
 
-.album-info {
-    text-align: center;
-}
-
-.album-title {
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 6px;
-    color: #fff;
-}
-
-.album-artist {
-    font-size: 14px;
-    color: #b3b3b3;
-}
-
-/* Animation for album cards on page load */
+/* Animations */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.album-card {
-    animation: fadeInUp 0.5s ease forwards;
+  from {
     opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Stagger album card animations */
@@ -268,78 +428,60 @@ body {
 .album-card:nth-child(5) { animation-delay: 0.5s; }
 .album-card:nth-child(6) { animation-delay: 0.6s; }
 
-/* Responsive adjustments */
+/* ================================
+   UTILITY CLASSES
+   ================================ */
+.hidden {
+  display: none !important;
+}
+
+/* ================================
+   RESPONSIVE STYLES
+   ================================ */
 @media (max-width: 768px) {
-    .album-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 20px;
-    }
-    
-    .album-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-    
-    .album-header h2 {
-        font-size: 28px;
-    }
-    
-    .album-selection {
-        padding: 20px;
-    }
-    
-    /* Responsive tutorial banner */
-    .tutorial-banner {
-        flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
-        padding: 15px;
-    }
-    
-    .tutorial-icon {
-        margin-bottom: 15px;
-        margin-right: 0;
-    }
-    
-    .tutorial-btn {
-        margin-left: 0;
-        margin-top: 15px;
-        align-self: flex-start;
-    }
-}
-
-/* Add to albums.css */
-
-/* Upload card styling */
-.upload-card .album-cover {
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    background-color: transparent !important;
-    transition: all 0.3s ease;
-}
-
-.upload-card:hover .album-cover {
-    border-color: #1db954;
-    background-color: rgba(29, 185, 84, 0.1) !important;
-}
-
-.upload-card .album-cover-img {
-    background: none !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.upload-card .album-cover-img svg {
-    opacity: 0.7;
-    transition: all 0.3s ease;
-}
-
-.upload-card:hover .album-cover-img svg {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.1);
-}
-
-.upload-card .album-title {
-    color: #1db954;
+  .album-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+  }
+  
+  .album-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .album-header h2 {
+    font-size: 28px;
+  }
+  
+  .album-selection {
+    padding: 20px;
+  }
+  
+  /* Responsive tutorial banner */
+  .tutorial-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: 15px;
+  }
+  
+  .tutorial-icon {
+    margin-bottom: 15px;
+    margin-right: 0;
+  }
+  
+  .tutorial-btn {
+    margin-left: 0;
+    margin-top: 15px;
+    align-self: flex-start;
+  }
+  
+  .app-title {
+    font-size: 48px;
+  }
+  
+  .loading-bar-container {
+    width: 90%;
+  }
 }

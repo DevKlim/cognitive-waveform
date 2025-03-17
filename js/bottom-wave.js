@@ -1,18 +1,55 @@
 /**
- * bottom-wave.js
- * Completely redesigned bottom wave animation with proper horizontal movement and audio reactivity
+ * Improved bottom wave visualization
+ * Makes the wave background transparent and stretch across the screen
  */
 
-/**
- * Initialize the bottom wave animation
- */
-function initBottomWave() {
+// Configuration for performance and visuals
+const BOTTOM_WAVE_CONFIG = {
+    UPDATE_INTERVAL: 50,     // ms between animation frames
+    ANIMATION_ENABLED: true, // Can be disabled on low-end devices
+    POINTS: 16,              // Number of points for wave path
+    HEIGHT: 60,              // Height in pixels
+    USE_AUDIO_VISUALIZER: true // Use audio-reactive visualization
+  };
+  
+  /**
+   * Initialize the bottom wave visualization
+   */
+  function initBottomWave() {
     const waveContainer = document.getElementById('bottom-wave-container');
     if (!waveContainer) return;
+    
+    // Set height
+    waveContainer.style.height = `${BOTTOM_WAVE_CONFIG.HEIGHT}px`;
+    
+    // Make background transparent
+    waveContainer.style.backgroundColor = 'transparent';
+    
+    // Make it stretch to both sides
+    waveContainer.style.width = '100vw';
+    waveContainer.style.left = '0';
+    waveContainer.style.right = '0';
+    waveContainer.style.position = 'fixed';
+    
+    // Make it click-through
+    waveContainer.style.pointerEvents = 'none';
     
     // Clear any existing content
     waveContainer.innerHTML = '';
     
+    if (BOTTOM_WAVE_CONFIG.USE_AUDIO_VISUALIZER) {
+      // Initialize audio-reactive visualization
+      initAudioReactiveWave(waveContainer);
+    } else {
+      // Create standard wave animation
+      createStandardWave(waveContainer);
+    }
+  }
+  
+  /**
+   * Create standard animated wave
+   */
+  function createStandardWave(container) {
     // Create SVG element
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("id", "bottom-wave");
@@ -20,164 +57,330 @@ function initBottomWave() {
     svg.setAttribute("preserveAspectRatio", "none");
     svg.setAttribute("viewBox", "0 0 1920 120");
     svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svg.style.position = 'absolute';
+    svg.style.bottom = '0';
+    svg.style.width = '100%';
+    svg.style.height = '100%';
     
-    // Create multiple wave paths for layered effect
+    // Create wave paths
     const wavePaths = [
-        {
-            id: 'wave-path-1',
-            class: 'wave-path wave-path-1',
-            fill: 'rgba(29, 185, 84, 0.15)',
-            speed: 10,
-            amplitude: 15,
-            frequency: 0.04,
-            phase: 0
-        },
-        {
-            id: 'wave-path-2',
-            class: 'wave-path wave-path-2',
-            fill: 'rgba(29, 185, 84, 0.2)',
-            speed: 15,
-            amplitude: 10,
-            frequency: 0.03,
-            phase: 0.5
-        },
-        {
-            id: 'wave-path-3',
-            class: 'wave-path wave-path-3',
-            fill: 'rgba(74, 144, 226, 0.15)',
-            speed: 20,
-            amplitude: 8,
-            frequency: 0.06,
-            phase: 0.25
-        }
+      {
+        id: 'wave-path-1',
+        class: 'wave-path wave-path-1',
+        fill: 'rgba(29, 185, 84, 0.15)',
+        speed: 0.5
+      },
+      {
+        id: 'wave-path-2',
+        class: 'wave-path wave-path-2',
+        fill: 'rgba(29, 185, 84, 0.1)',
+        speed: 0.3
+      },
+      {
+        id: 'wave-path-3',
+        class: 'wave-path wave-path-3',
+        fill: 'rgba(74, 144, 226, 0.1)',
+        speed: 0.7
+      }
     ];
     
     // Create path elements
     wavePaths.forEach(waveConfig => {
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("id", waveConfig.id);
-        path.setAttribute("class", waveConfig.class);
-        path.setAttribute("fill", waveConfig.fill);
-        
-        // Store wave configuration on the element for animation
-        path.dataset.speed = waveConfig.speed;
-        path.dataset.amplitude = waveConfig.amplitude;
-        path.dataset.frequency = waveConfig.frequency;
-        path.dataset.phase = waveConfig.phase;
-        
-        svg.appendChild(path);
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("id", waveConfig.id);
+      path.setAttribute("class", waveConfig.class);
+      path.setAttribute("fill", waveConfig.fill);
+      path.setAttribute("d", generateInitialWavePath());
+      
+      // Store wave configuration on the element for animation
+      path.dataset.speed = waveConfig.speed;
+      
+      svg.appendChild(path);
     });
     
     // Add SVG to container
-    waveContainer.appendChild(svg);
+    container.appendChild(svg);
     
-    // Start animation
-    animateWaves();
-}
-
-/**
- * Animate the wave paths
- */
-function animateWaves() {
-    // Audio reactivity variables
-    let audioReactivity = {
-        bass: 0,
-        mid: 0,
-        high: 0
-    };
-    
-    // Main animation loop
-    function updateWaves() {
-        // Update audio reactivity
-        if (audioDataArray && app.isPlaying) {
-            // Process audio data into frequency bands
-            const bassSum = audioDataArray.slice(0, 8).reduce((sum, val) => sum + val, 0);
-            const midSum = audioDataArray.slice(8, 24).reduce((sum, val) => sum + val, 0);
-            const highSum = audioDataArray.slice(24, 48).reduce((sum, val) => sum + val, 0);
-            
-            // Calculate normalized values with smooth transitions
-            const targetBass = bassSum / (8 * 255);
-            const targetMid = midSum / (16 * 255);
-            const targetHigh = highSum / (24 * 255);
-            
-            // Smooth transitions
-            audioReactivity.bass += (targetBass - audioReactivity.bass) * 0.3;
-            audioReactivity.mid += (targetMid - audioReactivity.mid) * 0.2;
-            audioReactivity.high += (targetHigh - audioReactivity.high) * 0.1;
-        } else {
-            // Smooth transitions to zero when not playing
-            audioReactivity.bass *= 0.95;
-            audioReactivity.mid *= 0.95;
-            audioReactivity.high *= 0.95;
-        }
-        
-        // Get all wave paths
-        const wavePaths = document.querySelectorAll('.wave-path');
-        
-        // Current time for animation
-        const time = Date.now() / 1000;
-        
-        // Update each wave path
-        wavePaths.forEach(path => {
-            // Get wave configuration
-            const speed = parseFloat(path.dataset.speed);
-            const baseAmplitude = parseFloat(path.dataset.amplitude);
-            const frequency = parseFloat(path.dataset.frequency);
-            const phaseOffset = parseFloat(path.dataset.phase);
-            
-            // Factor in audio reactivity
-            const amplitudeBoost = path.id === 'wave-path-1' ? audioReactivity.bass * 30 :
-                                  path.id === 'wave-path-2' ? audioReactivity.mid * 20 :
-                                  audioReactivity.high * 15;
-            
-            // Total amplitude with audio reactivity
-            const amplitude = baseAmplitude + amplitudeBoost;
-            
-            // Create wave path
-            const pathData = generateWavePath(time, speed, amplitude, frequency, phaseOffset);
-            
-            // Update path
-            path.setAttribute('d', pathData);
-        });
-        
-        // Request next frame
-        requestAnimationFrame(updateWaves);
+    // Start animation if enabled
+    if (BOTTOM_WAVE_CONFIG.ANIMATION_ENABLED) {
+      requestAnimationFrame(animateBottomWave);
     }
+  }
+  
+  /**
+   * Generate initial wave path
+   */
+  function generateInitialWavePath() {
+    const width = 1920;
+    const height = 120;
+    const points = BOTTOM_WAVE_CONFIG.POINTS;
+    const step = width / points;
     
-    // Start animation loop
-    updateWaves();
-}
-
-/**
- * Generate wave path with horizontal movement
- */
-function generateWavePath(time, speed, amplitude, frequency, phaseOffset) {
-    const width = 1920; // SVG viewbox width
-    const height = 120; // SVG viewbox height
-    const points = 50; // Number of points to generate
-    const step = width / (points - 1);
-    
-    // Calculate time-based phase shift for horizontal movement
-    const shiftX = (time * speed) % width;
-    
-    // Start path
+    // Generate a simple wave
     let pathData = `M 0,${height/2}`;
     
-    // Generate more points for smoother curves
-    for (let i = 0; i <= points; i++) {
-        const x = i * step;
-        
-        // Calculate wave Y position with horizontal movement
-        // The key is to use (x + shiftX) which shifts the entire wave pattern horizontally over time
-        const waveX = (x + shiftX) * frequency + phaseOffset;
-        const y = height/2 + Math.sin(waveX * Math.PI * 2) * amplitude;
-        
-        // Add point to path
-        pathData += ` L${x},${y}`;
+    for (let i = 1; i <= points; i++) {
+      const x = i * step;
+      const y = height/2 + Math.sin(i * 0.5) * 15; // Simple sine wave
+      pathData += ` L${x},${y}`;
     }
     
     // Complete the path
     pathData += ` L${width},${height} L0,${height} Z`;
     
     return pathData;
-}
+  }
+  
+  // Timestamp for throttling
+  let lastBottomWaveUpdate = 0;
+  
+  /**
+   * Animate bottom wave with throttling
+   */
+  function animateBottomWave() {
+    // Throttle updates
+    const now = Date.now();
+    if (now - lastBottomWaveUpdate < BOTTOM_WAVE_CONFIG.UPDATE_INTERVAL) {
+      requestAnimationFrame(animateBottomWave);
+      return;
+    }
+    lastBottomWaveUpdate = now;
+    
+    // Reference to time for animation
+    const time = now / 1000;
+    
+    // Get all wave paths
+    const wavePaths = document.querySelectorAll('.wave-path');
+    if (!wavePaths.length) {
+      requestAnimationFrame(animateBottomWave);
+      return;
+    }
+    
+    // Update each wave path
+    wavePaths.forEach(path => {
+      // Get wave speed
+      const speed = parseFloat(path.dataset.speed) || 0.5;
+      
+      // Update wave path
+      updateWavePath(path, time, speed);
+    });
+    
+    // Continue animation
+    requestAnimationFrame(animateBottomWave);
+  }
+  
+  /**
+   * Update a single wave path
+   */
+  function updateWavePath(path, time, speed) {
+    const width = 1920;
+    const height = 120;
+    const points = BOTTOM_WAVE_CONFIG.POINTS;
+    const step = width / points;
+    
+    // Simple time-based offset
+    const offset = time * speed * 100;
+    
+    // Generate new path data
+    let pathData = `M 0,${height/2}`;
+    
+    for (let i = 1; i <= points; i++) {
+      const x = i * step;
+      // Simple sine wave with time-based phase shift
+      const y = height/2 + Math.sin(i * 0.5 + offset * 0.01) * 15;
+      pathData += ` L${x},${y}`;
+    }
+    
+    // Complete the path
+    pathData += ` L${width},${height} L0,${height} Z`;
+    
+    // Update path data
+    path.setAttribute('d', pathData);
+  }
+  
+  /**
+   * Initialize audio-reactive wave visualization
+   */
+  function initAudioReactiveWave(container) {
+    console.log('Initializing audio-reactive wave');
+    
+    // Create the visualization container
+    const visualizerContainer = document.createElement('div');
+    visualizerContainer.className = 'audio-visualizer-container';
+    visualizerContainer.style.width = '100%';
+    visualizerContainer.style.height = '100%';
+    visualizerContainer.style.display = 'flex';
+    visualizerContainer.style.justifyContent = 'center';
+    visualizerContainer.style.alignItems = 'flex-end';
+    visualizerContainer.style.overflow = 'hidden';
+    visualizerContainer.style.padding = '0 10px';
+    
+    // Create frequency bars
+    const barsCount = 64; // Number of bars
+    const barWidth = 8;   // Width of each bar
+    const spacing = 2;    // Spacing between bars
+    
+    for (let i = 0; i < barsCount; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'audio-bar';
+      bar.style.width = `${barWidth}px`;
+      bar.style.height = '1px'; // Start with minimum height
+      bar.style.margin = `0 ${spacing / 2}px`;
+      
+      // Apply gradient color - green to blue spectrum
+      const hue = 120 + (i / barsCount) * 120; // 120 (green) to 240 (blue)
+      bar.style.backgroundColor = `hsla(${hue}, 80%, 50%, 0.6)`;
+      bar.style.boxShadow = `0 0 5px hsla(${hue}, 80%, 50%, 0.4)`;
+      bar.style.transition = 'height 0.05s ease-out';
+      bar.style.borderRadius = '1px 1px 0 0';
+      
+      // Store the index
+      bar.dataset.idx = i;
+      
+      visualizerContainer.appendChild(bar);
+    }
+    
+    // Add to container
+    container.innerHTML = '';
+    container.appendChild(visualizerContainer);
+    
+    // Add CSS for the visualizer
+    const style = document.createElement('style');
+    style.textContent = `
+      .audio-visualizer-container {
+        background-color: transparent;
+      }
+      
+      .audio-bar {
+        transform-origin: bottom;
+        transition: height 0.05s ease-out;
+      }
+    `;
+    
+    // Only add the style if it doesn't already exist
+    if (!document.getElementById('audio-visualizer-styles')) {
+      style.id = 'audio-visualizer-styles';
+      document.head.appendChild(style);
+    }
+    
+    // Start animation
+    startAudioWaveAnimation();
+  }
+  
+  // Animation frame ID
+  let audioWaveAnimationId = null;
+  
+  /**
+   * Start the audio wave animation
+   */
+  function startAudioWaveAnimation() {
+    // Cancel any existing animation
+    if (audioWaveAnimationId) {
+      cancelAnimationFrame(audioWaveAnimationId);
+    }
+    
+    function updateAudioWave() {
+      const visualizerContainer = document.querySelector('.audio-visualizer-container');
+      if (!visualizerContainer) {
+        audioWaveAnimationId = requestAnimationFrame(updateAudioWave);
+        return;
+      }
+      
+      const bars = visualizerContainer.querySelectorAll('.audio-bar');
+      if (!bars.length) {
+        audioWaveAnimationId = requestAnimationFrame(updateAudioWave);
+        return;
+      }
+      
+      // Get audio data if available
+      let audioData;
+      let isAudioActive = false;
+      
+      // Try to get audio data from custom audio first
+      if (window.customAudioAnalyzer && window.customAudioDataArray && 
+          window.customAudio && !window.customAudio.paused) {
+        window.customAudioAnalyzer.getByteFrequencyData(window.customAudioDataArray);
+        audioData = window.customAudioDataArray;
+        isAudioActive = true;
+      }
+      // Otherwise try the main audio processor
+      else if (window.analyser && window.audioDataArray && app.isPlaying) {
+        window.analyser.getByteFrequencyData(window.audioDataArray);
+        audioData = window.audioDataArray;
+        isAudioActive = true;
+      }
+      
+      // Update bars
+      for (let i = 0; i < bars.length; i++) {
+        let height;
+        
+        if (audioData && audioData.length > 0 && isAudioActive) {
+          // Audio frequency visualization
+          // Map bar index to frequency data
+          const dataIndex = Math.floor(i * audioData.length / bars.length);
+          const value = audioData[dataIndex] || 0;
+          
+          // Scale height based on value
+          height = Math.max(1, (value / 255) * 60);
+          
+          // Add some decay for smoother animation
+          const currentHeight = parseFloat(bars[i].style.height) || 1;
+          if (height < currentHeight) {
+            // Faster decay for falling bars
+            height = Math.max(height, currentHeight * 0.85);
+          } else {
+            // Slower rise for increasing bars
+            height = Math.min(height, currentHeight * 1.3);
+          }
+        } else {
+          // Fallback to data-driven visualization
+          const dataValue = getCurrentValue ? getCurrentValue() : 0;
+          
+          // Get min/max for normalization
+          let minValue = 0, maxValue = 100;
+          if (app.data && app.data.filtered && app.data.filtered.length > 0 && app.currentMetric) {
+            const values = app.data.filtered.map(d => d[app.currentMetric] || 0);
+            minValue = Math.min(...values);
+            maxValue = Math.max(...values);
+          }
+          
+          // Normalize data value
+          const normalizedValue = (dataValue - minValue) / (maxValue - minValue || 1);
+          
+          // Create bell curve with peak based on current value
+          const peakPosition = normalizedValue * bars.length;
+          const distance = Math.abs(i - peakPosition);
+          const falloff = Math.exp(-distance * distance / (bars.length * 0.2));
+          
+          // Add randomness for natural look
+          const randomFactor = 0.7 + Math.random() * 0.3;
+          height = Math.max(1, falloff * 60 * randomFactor * normalizedValue);
+        }
+        
+        // Apply height to bar
+        bars[i].style.height = `${height}px`;
+      }
+      
+      // Continue animation
+      audioWaveAnimationId = requestAnimationFrame(updateAudioWave);
+    }
+    
+    // Start animation
+    audioWaveAnimationId = requestAnimationFrame(updateAudioWave);
+  }
+  
+  /**
+   * Stop the audio wave animation
+   */
+  function stopAudioWaveAnimation() {
+    if (audioWaveAnimationId) {
+      cancelAnimationFrame(audioWaveAnimationId);
+      audioWaveAnimationId = null;
+    }
+  }
+  
+  // Set up on document load
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize bottom wave
+    initBottomWave();
+  });
