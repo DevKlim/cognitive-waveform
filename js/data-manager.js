@@ -119,9 +119,6 @@ function loadCSVFile(filePath, displayName) {
         currentDataset.textContent = displayName;
     }
     
-    console.log('Loading dataset:', filePath);
-    app.currentFile = filePath;
-    
     // Handle custom dataset from upload page
     if (filePath === 'custom_dataset') {
         console.log('Loading custom dataset from session storage');
@@ -158,50 +155,15 @@ function loadCSVFile(filePath, displayName) {
             return;
         }
     }
-    // Handle cached custom datasets
-    else if (filePath.startsWith('customDataset_')) {
-        console.log('Loading cached custom dataset:', filePath);
-        // Get custom dataset from session storage
-        const customDatasetJSON = sessionStorage.getItem(filePath);
-        
-        if (!customDatasetJSON) {
-            console.error('Cached custom dataset not found in session storage');
-            alert('Dataset has expired or was not found. Please upload again.');
-            window.location.href = 'albums.html';
-            return;
-        }
-        
-        try {
-            // Parse the JSON data
-            const customDataset = JSON.parse(customDatasetJSON);
-            
-            // Process custom dataset
-            processCustomDataset(customDataset, displayName || 'Custom Dataset');
-            
-            // Update sidebar active state
-            updateSidebar();
-            
-            // Store this as current dataset for simplicity
-            sessionStorage.setItem('customDataset', customDatasetJSON);
-            
-            // Hide loading indicator
-            if (loadingIndicator) {
-                loadingIndicator.classList.add('hidden');
-            }
-            
-            return;
-        } catch (error) {
-            console.error('Error parsing cached custom dataset:', error);
-            alert('Error loading dataset. Please upload again.');
-            window.location.href = 'albums.html';
-            return;
-        }
-    }
+    
+    // Regular CSV file loading continues here
+    console.log('Loading CSV from:', filePath);
+    app.currentFile = filePath;
     
     // Update sidebar active state
     updateSidebar();
     
-    // Regular CSV file loading for non-custom datasets
+    // Use D3 to fetch & parse CSV
     d3.csv(filePath)
         .then(data => {
             // Check if we got valid data
@@ -228,7 +190,7 @@ function loadCSVFile(filePath, displayName) {
             // Alert user
             alert(`Error loading data: ${error.message}`);
             
-            // Create mock data as fallback
+            // Create mock data
             createMockData();
         });
 }

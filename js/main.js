@@ -42,6 +42,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize bottom wave
     initBottomWave();
+    if (typeof initPitchRangeSlider === 'function') {
+        initPitchRangeSlider();
+      } else {
+        console.warn('Pitch range slider initialization function not found');
+      }
+      
+      // Make sure to update the audio mapping function to use the minFrequency and maxFrequency variables
+      // For example, if you have a function like this:
+      
+      /*
+      function mapValueToFrequency(value, min, max) {
+        // This function maps a value to a frequency for sonification
+        
+        // Instead of using fixed min/max frequencies:
+        // return 100 + (value / max) * 2000;
+        
+        // Use the dynamic range from pitch slider:
+        return minFrequency + ((value - min) / (max - min)) * (maxFrequency - minFrequency);
+      }
+      */
 });
 
 /**

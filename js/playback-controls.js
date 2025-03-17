@@ -342,7 +342,7 @@ function initButtonHoldFeature() {
           skipSpeed = Math.min(10, 1 + (Date.now() - holdStartTime) / 1000);
           
           // Skip with increasing speed
-          skipByPercentage(100000 * skipSpeed);
+          skipByPercentage(1000 * skipSpeed);
           
           // Update visualization without playing
           updateWaveform();

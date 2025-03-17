@@ -733,6 +733,7 @@
     border: 1px solid rgba(255, 255, 255, 0.05);
     padding: 10px 15px;
     margin-top: 15px;
+    min-width: 50px;
     animation: fadeIn 0.5s;
     display: flex;
     align-items: center;

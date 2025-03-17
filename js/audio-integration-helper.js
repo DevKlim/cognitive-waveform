@@ -49,7 +49,8 @@
         { id: 'triangle', name: 'Triangle Wave' },
         { id: 'square', name: 'Square Wave' },
         { id: 'sawtooth', name: 'Sawtooth Wave' },
-        { id: 'custom_audio', name: 'Custom Audio' }
+        { id: 'custom_audio', name: 'Custom Audio' },
+        { id: 'custom_wave', name: 'Custom Wave' }
       ];
       
       options.forEach(option => {

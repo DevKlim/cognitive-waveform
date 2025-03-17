@@ -4,9 +4,38 @@
  */
 
 /* Sound profile container styling */
+/**
+ * Add these styles to custom-waveform.css
+ */
+
+/* Pitch range slider container */
+.pitch-range-container {
+  background-color: rgba(24, 24, 24, 0.7);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 15px;
+  transition: all 0.3s ease;
+}
+
+.pitch-range-container:hover {
+  background-color: rgba(29, 185, 84, 0.05);
+  border-color: rgba(29, 185, 84, 0.2);
+}
+
+/* Slider handle styles */
+.slider-handle {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.slider-handle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(29, 185, 84, 0.5);
+}
+
+/* Adjust the sound-profile-container to have consistent spacing */
 .sound-profile-container {
   margin-top: 15px;
-  padding: 5px 20px;
+  padding: 10px 15px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -634,4 +663,33 @@ input:checked + .mode-toggle-slider:before {
   .sound-settings {
     width: 100%;
   }
+}
+
+/* Custom waveform controls */
+.custom-waveform-controls {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Sound upload button */
+.sound-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #2e2e2e;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  border: none;
+}
+
+.sound-upload-btn:hover {
+  background-color: #1db954;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(29, 185, 84, 0.3);
 }
