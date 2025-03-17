@@ -520,32 +520,30 @@ const WAVEFORM_TYPES = {
 //   }
 // }
   
-//   // Connect to sound profile dropdown
-//   document.addEventListener('DOMContentLoaded', function() {
-//     const soundProfileDropdown = document.getElementById('sound-profile-dropdown');
-//     if (soundProfileDropdown) {
-//       // Set initial value
-//       currentOscillatorType = soundProfileDropdown.value || WAVEFORM_TYPES.SINE;
+  // Connect to sound profile dropdown
+  document.addEventListener('DOMContentLoaded', function() {
+    const soundProfileDropdown = document.getElementById('sound-profile-dropdown');
+    if (soundProfileDropdown) {
+      // Set initial value
+      currentOscillatorType = soundProfileDropdown.value || WAVEFORM_TYPES.SINE;
       
-//       // Add change handler
-//       soundProfileDropdown.addEventListener('change', function() {
-//         setOscillatorType(this.value);
+      // Add change handler
+      soundProfileDropdown.addEventListener('change', function() {
+        setOscillatorType(this.value);
         
-//         // Toggle custom audio section
-//         const soundUploadSection = document.getElementById('sound-upload-section');
-//         if (soundUploadSection) {
-//           soundUploadSection.style.display = this.value === WAVEFORM_TYPES.CUSTOM_AUDIO ? 'block' : 'none';
-//         }
+        // Toggle custom audio section
+        const soundUploadSection = document.getElementById('sound-upload-section');
+        if (soundUploadSection) {
+          soundUploadSection.style.display = this.value === WAVEFORM_TYPES.CUSTOM_AUDIO ? 'block' : 'none';
+        }
         
-//         // Start/stop appropriate audio
-//         if (app.isPlaying) {
-//           stopSonification();
-//           startSonification();
-//         }
-//       });
-//     }
-
-//     initPitchRangeSlider();
-//   });
+        // Start/stop appropriate audio
+        if (app.isPlaying) {
+          stopSonification();
+          startSonification();
+        }
+      });
+    }
+  });
 
   
