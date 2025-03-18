@@ -1933,8 +1933,6 @@ function updatePlayerAudio(position) {
     const browseButton = document.getElementById('browse-files');
     if (browseButton) {
       browseButton.addEventListener('click', function() {
-        // Simulate file selection dialog
-        alert('In the actual application, this would open a file selection dialog');
       });
     }
     

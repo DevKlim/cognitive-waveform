@@ -14,6 +14,21 @@
       "name": "exam_dataset_10s.csv",
       "path": "data/exam_dataset_10s.csv",
       "displayName": "Exam Dataset (10s)"
+    },
+    {
+      "name": "snake_clean.csv",
+      "path": "data/snake_clean.csv",
+      "displayName": "Stress During Snake Game Dataset"
+    },
+    {
+      "name": "2-back-clean.csv",
+      "path": "data/2-back-clean.csv",
+      "displayName": "2-Back Exercise"
+    },
+    {
+      "name": "wesad_hr.csv",
+      "path": "data/wesad_hr.csv",
+      "displayName": "WESAD Wearable Stress Data"
     }
   ],
   "config": {
