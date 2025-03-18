@@ -1,1083 +1,2327 @@
 /**
- * tutorial.js
- * Interactive tutorial functionality for Cognify
- */
-
-// Audio context for sound demos
-let audioContext = null;
-let oscillator = null;
-let gainNode = null;
-let isPlaying = false;
-
-// Initialize audio context
-function initAudio() {
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        gainNode = audioContext.createGain();
-        gainNode.gain.value = 0.2; // Start at 20% volume
-        gainNode.connect(audioContext.destination);
-        console.log('Audio context initialized');
-    } catch (e) {
-        console.error('Failed to initialize audio context:', e);
-    }
-}
-
-// Utility functions
-function calculateYPosition(x) {
-    // These are approximations of the SVG path points
-    const points = [
-        {x: 0, y: 150},
-        {x: 60, y: 120},
-        {x: 120, y: 70},
-        {x: 180, y: 50},
-        {x: 240, y: 60},
-        {x: 300, y: 90},
-        {x: 360, y: 130},
-        {x: 420, y: 100},
-        {x: 480, y: 110},
-        {x: 540, y: 120},
-        {x: 600, y: 130}
-    ];
-    
-    // Find the two closest points
-    let p1 = points[0];
-    let p2 = points[points.length - 1];
-    
-    for (let i = 0; i < points.length - 1; i++) {
-        if (x >= points[i].x && x <= points[i+1].x) {
-            p1 = points[i];
-            p2 = points[i+1];
-            break;
-        }
-    }
-    
-    // Linear interpolation between the two points
-    if (p1.x === p2.x) return p1.y;
-    
-    const ratio = (x - p1.x) / (p2.x - p1.x);
-    return p1.y + ratio * (p2.y - p1.y);
-}
-
-// STEP 1: Initialize intro interactions
-function initStep1Interactions() {
-    console.log('Initializing step 1 interactions');
-    
-    const stressSlider = document.getElementById('stress-level');
-    const bpmValue = document.getElementById('bpm-value');
-    const waveformPreview = document.getElementById('waveform-preview');
-    const glowCircle = document.getElementById('glow-circle');
-    
-    if (!stressSlider || !bpmValue || !waveformPreview || !glowCircle) {
-        console.error('Missing elements for step 1');
-        return;
-    }
-    
-    // Initial waveform
-    updateIntroWaveform(50);
-
-    
-    // Update on slider change
-    stressSlider.addEventListener('input', function() {
-        const stressLevel = parseInt(this.value);
-        
-        // Update heart rate BPM (60-120 range)
-        const heartRate = 60 + (stressLevel * 0.6);
-        bpmValue.textContent = Math.round(heartRate);
-        
-        // Update waveform
-        updateIntroWaveform(stressLevel);
-        
-        // Update glow circle
-        updateGlowCircle(stressLevel);
-
-            const firstStep = document.querySelector('.tutorial-step[data-step="1"]');
-    if (firstStep) {
-        firstStep.classList.add('active');
-    }
-    });
-    
-    // Initialize with default value
-    stressSlider.dispatchEvent(new Event('input'));
-}
-
-function updateIntroWaveform(stress) {
-    const waveformPreview = document.getElementById('waveform-preview');
-    if (!waveformPreview) return;
-    
-    // Clear existing bars
-    waveformPreview.innerHTML = '';
-    
-    // Create bars based on stress level
-    const numBars = 20;
-    for (let i = 0; i < numBars; i++) {
-        // Calculate height based on stress and position
-        let height;
-        
-        if (stress < 30) {
-            // Low stress - smooth, regular pattern
-            height = 10 + Math.sin(i * 0.5) * 10;
-        } else if (stress < 70) {
-            // Medium stress - more variation
-            height = 15 + Math.sin(i * 0.8) * 15 + (Math.random() * 10);
-        } else {
-            // High stress - jagged, irregular pattern
-            height = 20 + Math.sin(i * 1.2) * 20 + (Math.random() * 20);
-        }
-        
-        // Create bar
-        const bar = document.createElement('div');
-        bar.className = 'waveform-bar';
-        bar.style.height = `${height}px`;
-        
-        // Add animation delay for wave effect
-        bar.style.animationDelay = `${i * 0.05}s`;
-        
-        waveformPreview.appendChild(bar);
-    }
-}
-
-function updateGlowCircle(stress) {
-    const glowCircle = document.getElementById('glow-circle');
-    if (!glowCircle) return;
-    
-    // Size based on stress (40-60px range)
-    const size = 40 + (stress * 0.2);
-    glowCircle.style.width = `${size}px`;
-    glowCircle.style.height = `${size}px`;
-    
-    // Color based on stress level (green to blue to purple spectrum)
-    const hue = Math.max(120, 280 - stress * 1.8);
-    glowCircle.style.backgroundColor = `hsla(${hue}, 80%, 50%, 0.6)`;
-    glowCircle.style.boxShadow = `0 0 ${15 + stress * 0.3}px hsla(${hue}, 80%, 50%, 0.4)`;
-    
-    // Pulse speed based on stress
-    const pulseSpeed = 1.5 - (stress * 0.01);
-    glowCircle.style.animationDuration = `${pulseSpeed}s`;
-}
-
-// STEP 2: Initialize chart interactions
-// Enhanced chart interactions for tutorial
-function initStep2Interactions() {
-    console.log('Initializing step 2 interactions');
-    
-    const chartScrubber = document.getElementById('chart-scrubber');
-    const chartLine = document.getElementById('chart-line');
-    const indicator = document.getElementById('chart-indicator');
-    const dataPoint = document.getElementById('chart-point');
-    const tooltip = document.getElementById('chart-tooltip');
-    const eventText = document.getElementById('chart-event');
-    const chartArea = document.querySelector('.chart-area');
-    
-    if (!chartScrubber || !indicator || !dataPoint || !tooltip || !eventText || !chartArea) {
-        console.error('Missing elements for step 2');
-        return;
-    }
-    
-    // Add audio context for continuous sound playback
-    let chartAudioContext = null;
-    let chartOscillator = null;
-    let chartGain = null;
-    let isChartSounding = false;
-    
-    function initChartAudio() {
-        try {
-            chartAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-            chartGain = chartAudioContext.createGain();
-            chartGain.gain.value = 0.2; // 20% volume
-            chartGain.connect(chartAudioContext.destination);
-        } catch (e) {
-            console.error('Failed to initialize chart audio:', e);
-        }
-    }
-    
-    function startChartSound(heartRate) {
-        if (!chartAudioContext) initChartAudio();
-        if (!chartAudioContext) return;
-        
-        // Stop existing sound
-        stopChartSound();
-        
-        try {
-            // Create oscillator
-            chartOscillator = chartAudioContext.createOscillator();
-            
-            // Map heart rate to frequency (60 BPM -> 200Hz, 120 BPM -> 800Hz)
-            const frequency = 200 + ((heartRate - 60) / 60 * 600);
-            chartOscillator.frequency.value = frequency;
-            
-            // Use sine wave for cleaner sound
-            chartOscillator.type = 'sine';
-            
-            // Connect and start
-            chartOscillator.connect(chartGain);
-            chartOscillator.start();
-            isChartSounding = true;
-        } catch (e) {
-            console.error('Error starting chart sound:', e);
-        }
-    }
-    
-    function stopChartSound() {
-        if (chartOscillator) {
-            try {
-                chartOscillator.stop();
-                chartOscillator.disconnect();
-                chartOscillator = null;
-                isChartSounding = false;
-            } catch (e) {
-                console.error('Error stopping chart sound:', e);
-            }
-        }
-    }
-    
-    // Update chart on scrubber change
-    chartScrubber.addEventListener('input', function() {
-        updateChartPosition(parseInt(this.value));
-    });
-    
-    // Update chart based on position value
-    function updateChartPosition(x) {
-        // Update indicator position
-        indicator.setAttribute('x1', x);
-        indicator.setAttribute('x2', x);
-        
-        // Calculate y position
-        const y = calculateYPosition(x);
-        
-        // Update data point position
-        dataPoint.setAttribute('cx', x);
-        dataPoint.setAttribute('cy', y);
-        
-        // Calculate heart rate based on y-position
-        const heartRate = 60 + ((200 - y) / 200 * 60);
-        
-        // Update tooltip
-        tooltip.style.left = `${x / 6}%`;
-        tooltip.style.top = `${y / 2}px`;
-        tooltip.textContent = `HR: ${Math.round(heartRate)} BPM`;
-        
-        // Update event description based on position
-        if (x < 120) {
-            eventText.textContent = 'Beginning of exam period - slightly elevated stress';
-        } else if (x < 240) {
-            eventText.textContent = 'Approaching difficult question - stress increasing';
-        } else if (x < 360) {
-            eventText.textContent = 'Peak stress during challenging problem';
-        } else if (x < 480) {
-            eventText.textContent = 'Time warning announcement - stress rising again';
-        } else {
-            eventText.textContent = 'Completing final questions - moderate stress';
-        }
-        
-        // Update sound if playing
-        if (isChartSounding) {
-            if (chartOscillator) {
-                // Smoothly transition to new frequency
-                const frequency = 200 + ((heartRate - 60) / 60 * 600);
-                chartOscillator.frequency.setTargetAtTime(frequency, chartAudioContext.currentTime, 0.1);
-            }
-        }
-    }
-    
-    // Add direct drag functionality to the chart
-    let isDragging = false;
-    
-    chartArea.addEventListener('mousedown', function(e) {
-        isDragging = true;
-        const rect = this.getBoundingClientRect();
-        const x = Math.max(0, Math.min(600, e.clientX - rect.left));
-        
-        // Start sound on drag
-        const y = calculateYPosition(x);
-        const heartRate = 60 + ((200 - y) / 200 * 60);
-        startChartSound(heartRate);
-        
-        // Update position
-        chartScrubber.value = x;
-        updateChartPosition(x);
-        
-        e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', function(e) {
-        if (!isDragging) return;
-        
-        const rect = chartArea.getBoundingClientRect();
-        const x = Math.max(0, Math.min(600, e.clientX - rect.left));
-        
-        // Update position
-        chartScrubber.value = x;
-        updateChartPosition(x);
-    });
-    
-    document.addEventListener('mouseup', function() {
-        if (isDragging) {
-            isDragging = false;
-            stopChartSound();
-        }
-    });
-    
-    // Add "Play Sound" button for the chart
-    const chartControls = document.querySelector('.chart-controls');
-    if (chartControls) {
-        const soundButton = document.createElement('button');
-        soundButton.id = 'chart-sound-btn';
-        soundButton.className = 'play-sound-btn';
-        soundButton.style.marginTop = '15px';
-        soundButton.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
-            </svg>
-            Play Chart Sound
-        `;
-        
-        let isPlayingChartSound = false;
-        soundButton.addEventListener('click', function() {
-            if (isPlayingChartSound) {
-                stopChartSound();
-                this.innerHTML = `
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                    Play Chart Sound
-                `;
-                isPlayingChartSound = false;
-            } else {
-                // Get current position
-                const x = parseInt(chartScrubber.value);
-                const y = calculateYPosition(x);
-                const heartRate = 60 + ((200 - y) / 200 * 60);
-                
-                startChartSound(heartRate);
-                this.innerHTML = `
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                    </svg>
-                    Stop Sound
-                `;
-                isPlayingChartSound = true;
-            }
-        });
-        
-        chartControls.appendChild(soundButton);
-    }
-    
-    // Touch support
-    chartArea.addEventListener('touchstart', function(e) {
-        const touch = e.touches[0];
-        const rect = this.getBoundingClientRect();
-        const x = Math.max(0, Math.min(600, touch.clientX - rect.left));
-        
-        // Start sound on touch
-        const y = calculateYPosition(x);
-        const heartRate = 60 + ((200 - y) / 200 * 60);
-        startChartSound(heartRate);
-        
-        // Update position
-        chartScrubber.value = x;
-        updateChartPosition(x);
-        
-        isDragging = true;
-        e.preventDefault();
-    }, { passive: false });
-    
-    chartArea.addEventListener('touchmove', function(e) {
-        if (!isDragging) return;
-        
-        const touch = e.touches[0];
-        const rect = this.getBoundingClientRect();
-        const x = Math.max(0, Math.min(600, touch.clientX - rect.left));
-        
-        // Update position
-        chartScrubber.value = x;
-        updateChartPosition(x);
-        
-        e.preventDefault();
-    }, { passive: false });
-    
-    chartArea.addEventListener('touchend', function() {
-        isDragging = false;
-        stopChartSound();
-    });
-    
-    // Fix for slider: make the slider thumb bigger for better usability
-    const style = document.createElement('style');
-    style.textContent = `
-        #chart-scrubber::-webkit-slider-thumb {
-            width: 24px;
-            height: 24px;
-        }
-        #chart-scrubber::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-        }
-        .chart-area {
-            cursor: pointer;
-        }
-        #chart-point {
-            cursor: grab;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Add instructions
-    const instructions = document.createElement('div');
-    instructions.style.marginTop = '15px';
-    instructions.style.padding = '10px';
-    instructions.style.backgroundColor = '#1a1a1a';
-    instructions.style.borderRadius = '6px';
-    instructions.style.fontSize = '14px';
-    instructions.style.color = '#b3b3b3';
-    instructions.innerHTML = `
-        <p><strong>Try it:</strong> Click and drag directly on the chart to hear the sound change with heart rate values. Just like you can in the full visualizer!</p>
-    `;
-    chartControls.appendChild(instructions);
-    
-    // Initialize with default value
-    chartScrubber.dispatchEvent(new Event('input'));
-}
-
-// STEP 3: Initialize waveform interactions
-function initStep3Interactions() {
-    console.log('Initializing step 3 interactions');
-    
-    const waveformContainer = document.getElementById('interactive-waveform');
-    const patternButtons = document.querySelectorAll('.pattern-btn');
-    const playButton = document.getElementById('play-sound');
-    const patternDescription = document.getElementById('pattern-description');
-    
-    if (!waveformContainer || !patternButtons.length || !playButton || !patternDescription) {
-        console.error('Missing elements for step 3');
-        return;
-    }
-    
-    // Create initial waveform (default: calm)
-    createWaveform('calm');
-    
-    // Handle pattern button clicks
-    patternButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Update active button
-            patternButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Create selected waveform
-            const pattern = this.getAttribute('data-pattern');
-            createWaveform(pattern);
-            
-            // Update description
-            updatePatternDescription(pattern);
-            
-            // Stop any playing sound
-            if (isPlaying) {
-                stopSound();
-                playButton.textContent = 'Play Sound';
-                playButton.innerHTML = `
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                    Play Sound
-                `;
-            }
-        });
-    });
-    
-    // Handle play button
-    playButton.addEventListener('click', function() {
-        if (isPlaying) {
-            stopSound();
-            this.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                </svg>
-                Play Sound
-            `;
-        } else {
-            // Get active pattern
-            const activeButton = document.querySelector('.pattern-btn.active');
-            const pattern = activeButton ? activeButton.getAttribute('data-pattern') : 'calm';
-            
-            playPatternSound(pattern);
-            this.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                </svg>
-                Stop Sound
-            `;
-        }
-    });
-}
-
-function createWaveform(pattern) {
-    const container = document.getElementById('interactive-waveform');
-    if (!container) return;
-    
-    // Clear existing bars
-    container.innerHTML = '';
-    
-    // Number of bars
-    const numBars = 40;
-    
-    // Create bars with specific pattern
-    for (let i = 0; i < numBars; i++) {
-        const barContainer = document.createElement('div');
-        barContainer.className = 'waveform-bar-container';
-        
-        // Create top bar
-        const topBar = document.createElement('div');
-        topBar.className = 'waveform-bar top-bar';
-        
-        // Create bottom bar (mirror of top)
-        const bottomBar = document.createElement('div');
-        bottomBar.className = 'waveform-bar bottom-bar';
-        
-        // Set height based on pattern
-        let height;
-        
-        if (pattern === 'calm') {
-            // Calm pattern - small, gentle waves
-            height = 8 + (Math.sin(i * 0.3) * 10);
-            topBar.style.backgroundColor = '#1db954'; // Green
-            bottomBar.style.backgroundColor = '#1db954';
-        } else if (pattern === 'focus') {
-            // Focus pattern - medium, regular waves
-            height = 15 + (Math.sin(i * 0.5) * 15);
-            topBar.style.backgroundColor = '#33d8e3'; // Teal
-            bottomBar.style.backgroundColor = '#33d8e3';
-        } else if (pattern === 'stress') {
-            // Stress pattern - tall, jagged waves
-            height = 20 + (Math.sin(i * 0.8) * 15) + (Math.random() * 20);
-            topBar.style.backgroundColor = '#4a90e2'; // Blue
-            bottomBar.style.backgroundColor = '#4a90e2';
-        }
-        
-        // Ensure minimum height
-        height = Math.max(3, height);
-        
-        topBar.style.height = height + 'px';
-        bottomBar.style.height = height + 'px';
-        
-        // Add animation delay for wave effect
-        const animationDelay = (Math.abs(i - 20) * 0.03);
-        topBar.style.animationDelay = animationDelay + 's';
-        bottomBar.style.animationDelay = animationDelay + 's';
-        
-        barContainer.appendChild(topBar);
-        barContainer.appendChild(bottomBar);
-        container.appendChild(barContainer);
-    }
-}
-
-function updatePatternDescription(pattern) {
-    const description = document.getElementById('pattern-description');
-    if (!description) return;
-    
-    if (pattern === 'calm') {
-        description.textContent = 'Calm pattern: A gentle, rhythmic waveform with low amplitude. This represents a relaxed state with minimal stress.';
-    } else if (pattern === 'focus') {
-        description.textContent = 'Focus pattern: A moderate, regular waveform. This shows attentive concentration without excessive stress.';
-    } else if (pattern === 'stress') {
-        description.textContent = 'Stress pattern: A tall, jagged waveform with high variability. This indicates high stress or anxiety with irregular fluctuations.';
-    }
-}
-
-function playPatternSound(pattern) {
-    if (!audioContext) {
-        initAudio();
-    }
-    
-    if (!audioContext) return;
-    
-    try {
-        // Stop previous sound
-        if (oscillator) {
-            oscillator.stop();
-            oscillator.disconnect();
-        }
-        
-        // Create new oscillator
-        oscillator = audioContext.createOscillator();
-        
-        // Set type and frequency based on pattern
-        if (pattern === 'calm') {
-            oscillator.type = 'sine';
-            oscillator.frequency.value = 220; // A3
-        } else if (pattern === 'focus') {
-            oscillator.type = 'triangle';
-            oscillator.frequency.value = 330; // E4
-        } else if (pattern === 'stress') {
-            oscillator.type = 'sawtooth';
-            oscillator.frequency.value = 392; // G4
-        }
-        
-        // Connect and start
-        oscillator.connect(gainNode);
-        oscillator.start();
-        isPlaying = true;
-        
-    } catch (e) {
-        console.error('Error playing pattern sound:', e);
-    }
-}
-
-function stopSound() {
-    if (oscillator) {
-        try {
-            oscillator.stop();
-            oscillator.disconnect();
-            oscillator = null;
-        } catch (e) {
-            console.error('Error stopping sound:', e);
-        }
-    }
-    isPlaying = false;
-}
-
-// STEP 4: Initialize pulse visualization interactions
-function initStep4Interactions() {
-    console.log('Initializing step 4 interactions');
-    
-    const heartRateSlider = document.getElementById('heart-rate');
-    const hrDisplay = document.getElementById('hr-display');
-    const pulseCircle = document.getElementById('demo-pulse-circle');
-    const pulseRing = document.getElementById('demo-pulse-ring');
-    const beatIndicator = document.getElementById('demo-beat-indicator');
-    const pulseValue = document.getElementById('demo-pulse-value');
-    const activityButtons = document.querySelectorAll('.activity-btn');
-    
-    if (!heartRateSlider || !hrDisplay || !pulseCircle || !pulseRing || !pulseValue) {
-        console.error('Missing elements for step 4');
-        return;
-    }
-    
-    // Create frequency bars
-    createFrequencyBars();
-    
-    // Start animation for frequency bars
-    animateFrequencyBars();
-    
-    // Update on slider change
-    heartRateSlider.addEventListener('input', function() {
-        const heartRate = parseInt(this.value);
-        
-        // Update display
-        hrDisplay.textContent = heartRate;
-        pulseValue.textContent = heartRate;
-        
-        // Update visualization
-        updatePulseVisualization(heartRate);
-        
-        // Update active button
-        activityButtons.forEach(button => {
-            const btnHr = parseInt(button.getAttribute('data-hr'));
-            button.classList.toggle('active', Math.abs(heartRate - btnHr) < 5);
-        });
-    });
-    
-    // Handle activity button clicks
-    activityButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Update active button
-            activityButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Get heart rate and update slider
-            const hr = parseInt(this.getAttribute('data-hr'));
-            heartRateSlider.value = hr;
-            
-            // Trigger update
-            heartRateSlider.dispatchEvent(new Event('input'));
-        });
-    });
-    
-    // Initialize with default value
-    heartRateSlider.dispatchEvent(new Event('input'));
-}
-
-function createFrequencyBars() {
-    const container = document.getElementById('frequency-bars');
-    if (!container) return;
-    
-    // Clear existing content
-    container.innerHTML = '';
-    
-    // Create 30 bars arranged in a circle
-    for (let i = 0; i < 30; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'frequency-bar';
-        
-        // Calculate angle for positioning
-        const angle = (i / 30) * 360;
-        bar.style.transform = `rotate(${angle}deg)`;
-        
-        // Create inner bar that will animate
-        const innerBar = document.createElement('div');
-        innerBar.className = 'frequency-bar-inner';
-        
-        bar.appendChild(innerBar);
-        container.appendChild(bar);
-    }
-}
-
-function animateFrequencyBars() {
-    // Store heart rate value for animation
-    let activeHR = 70;
-    
-    function updateHR() {
-        const hrDisplay = document.getElementById('hr-display');
-        if (hrDisplay) {
-            activeHR = parseInt(hrDisplay.textContent) || 70;
-        }
-    }
-    
-    function animate() {
-        updateHR();
-        updateFrequencyBars(activeHR);
-        requestAnimationFrame(animate);
-    }
-    
-    animate();
-}
-
-function updateFrequencyBars(heartRate) {
-    const bars = document.querySelectorAll('.frequency-bar-inner');
-    if (!bars.length) return;
-    
-    // Calculate base height and variability based on heart rate
-    const baseHeight = 20 + ((heartRate - 60) / 120 * 30);
-    const variability = heartRate / 60; // Higher heart rate = more variability
-    
-    bars.forEach((bar, index) => {
-        // Create a pattern of heights based on angle and heart rate
-        const angleEffect = Math.sin((index / bars.length) * Math.PI * 2 * 3) * variability;
-        const pulseEffect = Math.sin(Date.now() / (1000 / (heartRate / 60)) + index) * variability;
-        
-        const height = baseHeight + (angleEffect * 5) + (pulseEffect * 10);
-        bar.style.height = Math.max(5, height) + 'px';
-        
-        // Color changes with heart rate
-        const hue = Math.max(180, 240 - ((heartRate - 60) / 120 * 60));
-        bar.style.backgroundColor = `hsla(${hue}, 80%, 50%, 0.7)`;
-    });
-}
-
-function updatePulseVisualization(heartRate) {
-    const pulseCircle = document.getElementById('demo-pulse-circle');
-    const pulseRing = document.getElementById('demo-pulse-ring');
-    const beatIndicator = document.getElementById('demo-beat-indicator');
-    
-    if (!pulseCircle || !pulseRing) return;
-    
-    // Calculate animation speed based on heart rate
-    // Heart rate in BPM divided by 60 gives beats per second
-    const animationDuration = 60 / heartRate;
-    
-    // Update pulse circle
-    pulseCircle.style.animationDuration = animationDuration + 's';
-    
-    // Size and color based on heart rate
-    // Scale size: 60 BPM = 50px, 180 BPM = 80px
-    const circleSize = 50 + ((heartRate - 60) / 120 * 30);
-    pulseCircle.style.width = circleSize + 'px';
-    pulseCircle.style.height = circleSize + 'px';
-    
-    // Color changes from green to blue to purple as rate increases
-    const hue = Math.max(180, 240 - ((heartRate - 60) / 120 * 60));
-    pulseCircle.style.backgroundColor = `hsla(${hue}, 80%, 50%, 0.5)`;
-    pulseCircle.style.boxShadow = `0 0 30px hsla(${hue}, 80%, 50%, 0.5)`;
-    
-    // Update ring animation
-    pulseRing.style.animationDuration = (animationDuration * 1.5) + 's';
-    
-    // Update beat indicator
-    if (beatIndicator) {
-        // Beat indicator fades in and out with the heart rate
-        // Start a pulsing animation
-        createPulseAnimation(beatIndicator, heartRate);
-    }
-}
-
-function createPulseAnimation(indicator, heartRate) {
-    // Clear any existing animation
-    indicator.style.animation = 'none';
-    
-    // Set animation parameters based on heart rate
-    const duration = 60 / heartRate; // seconds per beat
-    
-    // Create keyframe animation
-    indicator.style.animation = `pulse-beat ${duration}s infinite`;
-    
-    // Create a custom animation
-    const keyframes = `
-    @keyframes pulse-beat {
-        0% { transform: scale(0.8); opacity: 0.2; }
-        15% { transform: scale(1.2); opacity: 1; }
-        30% { transform: scale(1); opacity: 0.7; }
-        100% { transform: scale(0.8); opacity: 0.2; }
-    }`;
-    
-    // Add the keyframes to the document if not already present
-    if (!document.getElementById('pulse-beat-keyframes')) {
-        const styleSheet = document.createElement('style');
-        styleSheet.id = 'pulse-beat-keyframes';
-        styleSheet.textContent = keyframes;
-        document.head.appendChild(styleSheet);
-    }
-}
-
-// STEP 5: Initialize player controls interactions
-function initStep5Interactions() {
-    console.log('Initializing step 5 interactions');
-    
-    const playButton = document.getElementById('demo-play-btn');
-    const playIcon = document.getElementById('play-icon');
-    const pauseIcon = document.getElementById('pause-icon');
-    const timelineHandle = document.getElementById('demo-timeline-handle');
-    const timelineProgress = document.getElementById('demo-timeline-progress');
-    const currentTime = document.getElementById('current-time');
-    const totalTime = document.getElementById('total-time');
-    const volumeSlider = document.getElementById('volume');
-    const speedSlider = document.getElementById('playback-speed');
-    const speedValue = document.getElementById('speed-value');
-    const soundType = document.getElementById('sound-type');
-    
-    if (!playButton || !timelineHandle || !timelineProgress) {
-        console.error('Missing elements for step 5');
-        return;
-    }
-    
-    // Variables for player demo
-    let isPlaying = false;
-    let playbackInterval = null;
-    let currentPosition = 10; // Start position (%)
-    let playbackSpeed = 1.0;
-    
-    // Initialize position
-    updatePlayerPosition();
-    
-    // Play/pause button
-    playButton.addEventListener('click', function() {
-        isPlaying = !isPlaying;
-        
-        // Update icons
-        playIcon.classList.toggle('hidden', isPlaying);
-        pauseIcon.classList.toggle('hidden', !isPlaying);
-        
-        if (isPlaying) {
-            // Start playback animation
-            playbackInterval = setInterval(() => {
-                currentPosition += 0.5 * playbackSpeed;
-                
-                if (currentPosition >= 100) {
-                    currentPosition = 100;
-                    clearInterval(playbackInterval);
-                    isPlaying = false;
-                    playIcon.classList.remove('hidden');
-                    pauseIcon.classList.add('hidden');
-                }
-                
-                updatePlayerPosition();
-            }, 100);
-        } else {
-            // Stop playback animation
-            clearInterval(playbackInterval);
-        }
-    });
-    
-    // Playback speed slider
-    if (speedSlider && speedValue) {
-        speedSlider.addEventListener('input', function() {
-            playbackSpeed = parseFloat(this.value);
-            speedValue.textContent = playbackSpeed.toFixed(1) + 'x';
-        });
-    }
-    
-    // Volume slider
-    if (volumeSlider && gainNode) {
-        volumeSlider.addEventListener('input', function() {
-            const volume = this.value / 100;
-            if (gainNode) {
-                gainNode.gain.value = volume;
-            }
-        });
-    }
-    
-    // Sound type selector
-    if (soundType && oscillator) {
-        soundType.addEventListener('change', function() {
-            if (oscillator) {
-                oscillator.type = this.value;
-            }
-        });
-    }
-    
-    // Timeline click handler
-    const timelineTrack = document.querySelector('.timeline-track');
-    if (timelineTrack) {
-        timelineTrack.addEventListener('click', function(e) {
-            const rect = this.getBoundingClientRect();
-            const clickPosition = (e.clientX - rect.left) / rect.width;
-            
-            currentPosition = clickPosition * 100;
-            updatePlayerPosition();
-        });
-    }
-    
-    // Drag functionality for handle
-    if (timelineHandle) {
-        let isDragging = false;
-        
-        timelineHandle.addEventListener('mousedown', function(e) {
-            isDragging = true;
-            e.preventDefault();
-        });
-        
-        document.addEventListener('mousemove', function(e) {
-            if (!isDragging) return;
-            
-            const track = document.querySelector('.timeline-track');
-            if (!track) return;
-            
-            const rect = track.getBoundingClientRect();
-            let newX = (e.clientX - rect.left) / rect.width;
-            newX = Math.max(0, Math.min(1, newX));
-            
-            currentPosition = newX * 100;
-            updatePlayerPosition();
-        });
-        
-        document.addEventListener('mouseup', function() {
-            isDragging = false;
-        });
-    }
-    
-    function updatePlayerPosition() {
-        // Update handle position
-        if (timelineHandle) {
-            timelineHandle.style.left = `${currentPosition}%`;
-        }
-        
-        // Update progress bar
-        if (timelineProgress) {
-            timelineProgress.style.width = `${currentPosition}%`;
-        }
-        
-        // Update time display
-        if (currentTime) {
-            const seconds = Math.floor((currentPosition / 100) * 150); // Total 2:30 = 150 seconds
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = seconds % 60;
-            currentTime.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-        }
-    }
-}
-
-// Initialize scrollama for scroll-based interactions
-function initScrollama() {
-    const scroller = scrollama();
-    
-    // Set up the steps
-    scroller
-        .setup({
-            step: '.tutorial-step',
-            offset: 0.5,
-            debug: false
-        })
-        .onStepEnter(response => {
-            // Update current step
-            const currentStep = response.element.dataset.step;
-            
-            // Update active state in progress indicator
-            document.querySelectorAll('.progress-step').forEach(step => {
-                step.classList.toggle('active', parseInt(step.dataset.step) <= currentStep);
-            });
-            
-            // Update progress bar
-            const progressPercentage = (currentStep - 1) / 5 * 100;
-            document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
-            
-            // Hide scroll prompt after first step
-            if (currentStep > 1) {
-                document.querySelector('.scroll-prompt').classList.add('hidden');
-            }
-            
-            // Initialize specific step interactions
-            if (response.index === 0 && !window.step1Initialized) {
-                initStep1Interactions();
-                window.step1Initialized = true;
-            }
-            else if (response.index === 1 && !window.step2Initialized) {
-                initStep2Interactions();
-                window.step2Initialized = true;
-            }
-            else if (response.index === 2 && !window.step3Initialized) {
-                initStep3Interactions();
-                window.step3Initialized = true;
-            }
-            else if (response.index === 3 && !window.step4Initialized) {
-                initStep4Interactions();
-                window.step4Initialized = true;
-            }
-            else if (response.index === 4 && !window.step5Initialized) {
-                initStep5Interactions();
-                window.step5Initialized = true;
-            }
-        });
-}
-
-
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
+   * enhanced-tutorial.js
+   * Interactive tutorial functionality for Cognify
+   */
+  
+  // Store global state for audio and visualizations
+  const tutorialState = {
+    // Audio context and nodes
+    audioContext: null,
+    gainNode: null,
+    oscillator: null,
+    isPlaying: false,
+    currentWaveType: 'sine',
+    
+    // Chart data
+    chartData: null,
+    heartRateBaseline: 70,
+    
+    // Player demo
+    playerInterval: null,
+    playerPosition: 0,
+    playerIsPlaying: false,
+    
+    // Waveform editor
+    isDrawing: false,
+    drawPath: [],
+    customWaveBuffer: null
+  };
+  
+  /**
+   * Initialize all tutorial sections when the page loads
+   */
+  document.addEventListener('DOMContentLoaded', function() {
     console.log('Tutorial page loaded');
     
     // Initialize scrollama
     initScrollama();
     
-    // Initialize first interactive elements
-    initStep1Interactions();
-
-        // Make first step visible immediately
+    // Pre-initialize first section
+    initStep1();
+    
+    // Make first step visible immediately
     const firstStep = document.querySelector('.tutorial-step[data-step="1"]');
     if (firstStep) {
-        firstStep.classList.add('active');
+      firstStep.classList.add('active');
     }
     
-    // Automatically trigger the first animation
-    const stressSlider = document.getElementById('stress-level');
-    if (stressSlider) {
-        stressSlider.dispatchEvent(new Event('input'));
+    // Set up finish button action
+    const finishButton = document.getElementById('finish-tutorial');
+    if (finishButton) {
+      finishButton.addEventListener('click', function() {
+        window.location.href = 'albums.html';
+      });
     }
-
+  });
+  
+  /**
+   * Initialize scrollama for step-based scrolling
+   */
+  function initScrollama() {
+    const scroller = scrollama();
     
-    // Add click events to the tutorial banner in albums.html
-    const tutorialBanner = document.getElementById('tutorial-banner');
-    if (tutorialBanner) {
-        // Mark as seen when clicking the Start Tour button
-        const startTourBtn = tutorialBanner.querySelector('.tutorial-btn');
-        if (startTourBtn) {
-            startTourBtn.addEventListener('click', function() {
-                localStorage.setItem('hasSeenTutorial', 'true');
-            });
+    // Set up the steps
+    scroller
+      .setup({
+        step: '.tutorial-step',
+        offset: 0.5,
+        debug: false
+      })
+      .onStepEnter(response => {
+        // Get the step number
+        const stepNumber = parseInt(response.element.dataset.step);
+        
+        // Update progress bar
+        updateProgress(stepNumber);
+        
+        // Hide scroll prompt after first step
+        if (stepNumber > 1) {
+          const scrollPrompt = document.getElementById('scroll-prompt');
+          if (scrollPrompt) scrollPrompt.classList.add('hidden');
         }
+        
+        // Mark step as active
+        response.element.classList.add('active');
+        
+        // Initialize specific step content
+        switch(stepNumber) {
+          case 1: initStep1(); break;
+          case 2: initStep2(); break;
+          case 3: initStep3(); break;
+          case 4: initStep4(); break;
+          case 5: initStep5(); break;
+        }
+      })
+      .onStepExit(response => {
+        // Clean up any active audio/animations when leaving a step
+        const stepNumber = parseInt(response.element.dataset.step);
+        
+        // Stop any audio playing in the section
+        if (tutorialState.isPlaying) {
+          stopAudio();
+        }
+        
+        // Clean up specific step resources
+        switch(stepNumber) {
+          case 1: cleanupStep1(); break;
+          case 2: cleanupStep2(); break;
+          case 3: cleanupStep3(); break;
+          case 4: cleanupStep4(); break;
+          case 5: cleanupStep5(); break;
+        }
+      });
+      
+    // After initialization, update to reflect current position
+    // This helps if the page is refreshed in the middle of the tutorial
+    scroller.resize();
+  }
+  
+  /**
+   * Update progress bar and step indicators
+   * @param {number} step - Current step number (1-based)
+   */
+  function updateProgress(step) {
+    // Update progress bar
+    const progressBar = document.getElementById('progress-bar');
+    if (progressBar) {
+      // Calculate percentage (5 steps total)
+      const progress = ((step - 1) / 4) * 100;
+      progressBar.style.width = `${progress}%`;
     }
-});
-
-// Add this code to albums.html to hide the banner for returning users
-function initTutorialBanner() {
-    const tutorialBanner = document.getElementById('tutorial-banner');
-    if (!tutorialBanner) return;
     
-    // Check if user has seen tutorial
-    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+    // Update step indicators
+    const stepIndicators = document.querySelectorAll('.progress-step');
+    stepIndicators.forEach(indicator => {
+      const indicatorStep = parseInt(indicator.dataset.step);
+      indicator.classList.toggle('active', indicatorStep <= step);
+    });
+  }
+  
+/**
+ * Initialize audio context for all audio functionality
+ */
+function initAudioContext() {
+  if (tutorialState.audioContext) return;
+  
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    tutorialState.audioContext = new AudioContext();
     
-    // Hide banner if user has seen tutorial
-    if (hasSeenTutorial) {
-        tutorialBanner.style.display = 'none';
-    }
+    // Create main gain node
+    tutorialState.gainNode = tutorialState.audioContext.createGain();
+    tutorialState.gainNode.gain.value = 0.2; // 20% volume
+    tutorialState.gainNode.connect(tutorialState.audioContext.destination);
+    
+    console.log('Audio context initialized');
+  } catch (e) {
+    console.error('Failed to initialize audio context:', e);
+  }
 }
 
-// Run the banner initializer if we're on the albums page
-if (document.querySelector('.album-selection')) {
-    document.addEventListener('DOMContentLoaded', initTutorialBanner);
+/**
+ * Start playing a simple oscillator
+ * @param {string} type - Oscillator type (sine, square, etc.)
+ * @param {number} frequency - Initial frequency in Hz
+ */
+function playAudio(type, frequency) {
+  // Initialize audio context if needed
+  initAudioContext();
+  if (!tutorialState.audioContext) return;
+  
+  // Resume context if suspended (needed for Chrome's autoplay policy)
+  if (tutorialState.audioContext.state === 'suspended') {
+    tutorialState.audioContext.resume();
+  }
+  
+  // Stop any currently playing audio
+  stopAudio();
+  
+  try {
+    // Create new oscillator
+    tutorialState.oscillator = tutorialState.audioContext.createOscillator();
+    tutorialState.oscillator.type = type || 'sine';
+    tutorialState.oscillator.frequency.value = frequency || 440;
+    
+    // Connect and start
+    tutorialState.oscillator.connect(tutorialState.gainNode);
+    tutorialState.oscillator.start();
+    tutorialState.isPlaying = true;
+    tutorialState.currentWaveType = type;
+    
+    console.log(`Started ${type} wave at ${frequency}Hz`);
+  } catch (e) {
+    console.error('Error starting audio:', e);
+  }
 }
+
+/**
+ * Stop currently playing audio
+ */
+function stopAudio() {
+  if (!tutorialState.oscillator || !tutorialState.isPlaying) return;
+  
+  try {
+    tutorialState.oscillator.stop();
+    tutorialState.oscillator.disconnect();
+    tutorialState.oscillator = null;
+    tutorialState.isPlaying = false;
+    
+    console.log('Audio stopped');
+  } catch (e) {
+    console.error('Error stopping audio:', e);
+  }
+}
+
+/**
+ * Update the frequency of currently playing audio
+ * @param {number} frequency - New frequency in Hz
+ */
+function updateFrequency(frequency) {
+  if (!tutorialState.oscillator || !tutorialState.isPlaying) return;
+  
+  try {
+    // Use exponential ramp for smoother transition
+    const now = tutorialState.audioContext.currentTime;
+    tutorialState.oscillator.frequency.exponentialRampToValueAtTime(
+      Math.max(frequency, 1), // Ensure value is positive for exponentialRamp
+      now + 0.1
+    );
+  } catch (e) {
+    console.error('Error updating frequency:', e);
+  }
+}
+
+/**
+ * Update volume level
+ * @param {number} level - Volume level from 0-1
+ */
+function updateVolume(level) {
+  if (!tutorialState.gainNode) return;
+  
+  try {
+    // Clamp value between 0-1
+    const safeLevel = Math.max(0, Math.min(1, level));
+    
+    // Smooth transition
+    const now = tutorialState.audioContext.currentTime;
+    tutorialState.gainNode.gain.linearRampToValueAtTime(
+      safeLevel,
+      now + 0.1
+    );
+  } catch (e) {
+    console.error('Error updating volume:', e);
+  }
+}
+  
+  /**
+   * Update the frequency of currently playing audio
+   * @param {number} frequency - New frequency in Hz
+   */
+  function updateFrequency(frequency) {
+    if (!tutorialState.oscillator || !tutorialState.isPlaying) return;
+    
+    try {
+      // Use exponential ramp for smoother transition
+      const now = tutorialState.audioContext.currentTime;
+      tutorialState.oscillator.frequency.exponentialRampToValueAtTime(
+        frequency,
+        now + 0.1
+      );
+    } catch (e) {
+      console.error('Error updating frequency:', e);
+    }
+  }
+
+  
+  // =================================================================
+  // STEP 1: Why Visualize Data with Sound?
+  // =================================================================
+  function initStep1() {
+    console.log('Initializing step 1');
+    
+    // Set up stress level slider
+    initStressSlider();
+    
+    // Set up visual/audio demo
+    initVisualAudioDemo();
+  }
+
+
+  function initStep1() {
+    console.log('Initializing step 1');
+    
+    // Set up stress level slider
+    const stressSlider = document.getElementById('stress-slider');
+    if (stressSlider) {
+      stressSlider.addEventListener('input', updateStressVisualization);
+      // Initialize with default value
+      stressSlider.value = 20;
+      updateStressVisualization();
+    }
+    
+    // Set up play stress sound button
+    const playStressButton = document.getElementById('play-stress-sound');
+    if (playStressButton) {
+      playStressButton.addEventListener('click', function() {
+        if (tutorialState.isPlaying) {
+          stopAudio();
+          this.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M8 5v14l11-7z" fill="currentColor"/>
+            </svg>
+            Hear It
+          `;
+        } else {
+          // Get stress level and convert to frequency
+          const stressLevel = parseInt(document.getElementById('stress-slider').value);
+          const heartRate = 60 + (stressLevel * 0.6);
+          const frequency = 220 + ((heartRate - 60) / 120) * 440;
+          
+          // Choose waveform based on stress
+          let waveType = 'sine';
+          if (stressLevel > 70) {
+            waveType = 'sawtooth';
+          } else if (stressLevel > 30) {
+            waveType = 'triangle';
+          }
+          
+          playAudio(waveType, frequency);
+          this.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+            </svg>
+            Stop
+          `;
+        }
+      });
+    }
+    
+    // Also set up visual/audio demo
+    initVisualAudioDemo();
+  }
+  
+  function updateStressVisualization() {
+    const slider = document.getElementById('stress-slider');
+    if (!slider) return;
+    
+    const stressLevel = parseInt(slider.value);
+    
+    // Update heart rate based on stress (60-120 BPM range)
+    const heartRate = 60 + (stressLevel * 0.6);
+    const bpmValue = document.getElementById('bpm-value');
+    if (bpmValue) {
+      bpmValue.textContent = `${Math.round(heartRate)} BPM`;
+    }
+    
+    // Update waveform visualization
+    updateLiveWaveform(stressLevel);
+    
+    // Update heart animation speed
+    const heartIcon = document.getElementById('heart-animation');
+    if (heartIcon) {
+      // Adjust animation speed based on heart rate
+      const animationDuration = 60 / heartRate; // seconds per beat
+      heartIcon.style.animationDuration = `${animationDuration}s`;
+    }
+    
+    // If sound is currently playing, update its frequency
+    if (tutorialState.isPlaying && tutorialState.oscillator) {
+      const frequency = 220 + ((heartRate - 60) / 120) * 440;
+      updateFrequency(frequency);
+    }
+  }
+  
+  /**
+   * Update the live waveform visualization based on stress level
+   */
+  function updateLiveWaveform(stressLevel) {
+    const waveform = document.getElementById('live-waveform');
+    if (!waveform) return;
+    
+    // Clear existing bars
+    waveform.innerHTML = '';
+    
+    // Create new bars based on stress level
+    const barCount = 20;
+    
+    for (let i = 0; i < barCount; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'waveform-bar';
+      
+      // Calculate height based on stress level and position
+      let height;
+      
+      if (stressLevel < 30) {
+        // Low stress - smooth, regular pattern
+        height = 10 + Math.sin(i * 0.5) * 10;
+      } else if (stressLevel < 70) {
+        // Medium stress - more variation
+        height = 15 + Math.sin(i * 0.8) * 15 + (Math.random() * 5);
+      } else {
+        // High stress - jagged, irregular pattern
+        height = 20 + Math.sin(i * 1.2) * 20 + (Math.random() * 15);
+      }
+      
+      bar.style.height = `${height}px`;
+      
+      // Add varying animation delay for wave effect
+      bar.style.animationDelay = `${i * 0.05}s`;
+      
+      // Color based on stress
+      const hue = Math.max(120, 360 - stressLevel * 2.4); // Green to red
+      bar.style.backgroundColor = `hsl(${hue}, 80%, 50%)`;
+      
+      waveform.appendChild(bar);
+    }
+  }
+
+  /**
+ * Update audio and visualization for the audio demo
+ */
+function updateAudioDemoVisualization(data, position) {
+    // Update audio frequency based on data value
+    const dataValue = getDataValueAtPosition(data, position);
+    const frequency = mapValueToFrequency(dataValue);
+    
+    if (tutorialState.isPlaying) {
+      updateFrequency(frequency);
+    }
+    
+    // Update position line in chart
+    const chart = d3.select('#audiovisual-chart svg');
+    if (!chart.empty()) {
+      const xScale = d3.scaleLinear()
+        .domain([0, data.length - 1])
+        .range([40, chart.attr('width') - 20]);
+      
+      const index = Math.floor((position / 100) * (data.length - 1));
+      const x = xScale(index);
+      
+      // Update position line
+      const positionLine = chart.select('#position-line');
+      if (!positionLine.empty()) {
+        positionLine.attr('x1', x).attr('x2', x);
+      }
+      
+      // Update highlight point
+      const highlightPoint = chart.select('#highlight-point');
+      if (!highlightPoint.empty()) {
+        const yScale = d3.scaleLinear()
+          .domain([d3.min(data, d => d.y) * 0.9, d3.max(data, d => d.y) * 1.1])
+          .range([chart.attr('height') - 30, 20]);
+        
+        highlightPoint
+          .attr('cx', x)
+          .attr('cy', yScale(data[index].y))
+          .attr('opacity', 1);
+      }
+    }
+  }
+  
+ /**
+ * Initialize the visual/audio demo in section 1
+ */
+function initVisualAudioDemo() {
+    console.log('Initializing visual/audio demo');
+    
+    // Set up the SVG for the audio-visual demo
+    const visualChart = document.getElementById('visual-only-chart');
+    const audioVisualChart = document.getElementById('audiovisual-chart');
+    
+    if (!visualChart || !audioVisualChart) {
+      console.warn('Charts not found in DOM');
+      return;
+    }
+    
+    // Create a simple dataset with a hidden pattern
+    const sampleData = generateSampleDataWithPattern();
+    
+    // Create a simple line chart for both visualizations
+    createSimpleLineChart(visualChart, sampleData, false);
+    createSimpleLineChart(audioVisualChart, sampleData, true);
+    
+    // Set up play button for audio demo
+    const playButton = document.getElementById('play-audio-demo');
+    const timelineProgress = document.getElementById('audio-timeline-progress');
+    const timelineHandle = document.getElementById('audio-timeline-handle');
+    
+    if (!playButton) {
+      console.warn('Play button not found in DOM');
+      return;
+    }
+    
+    // Explicitly handle click events rather than relying on existing handlers
+    let demoIsPlaying = false;
+    let demoInterval = null;
+    let demoPosition = 0;
+    
+    // Remove any existing click handlers to avoid duplicates
+    playButton.removeEventListener('click', handlePlayClick);
+    
+    // Define the click handler
+    function handlePlayClick() {
+      console.log('Play button clicked, current state:', demoIsPlaying ? 'playing' : 'stopped');
+      
+      if (demoIsPlaying) {
+        // Stop playback
+        if (demoInterval) {
+          clearInterval(demoInterval);
+          demoInterval = null;
+        }
+        stopAudio();
+        demoIsPlaying = false;
+        
+        // Update button UI
+        playButton.innerHTML = `
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M8 5v14l11-7z" fill="currentColor"/>
+          </svg>
+          Play
+        `;
+      } else {
+        // Start playback
+        demoIsPlaying = true;
+        
+        // Update button UI
+        playButton.innerHTML = `
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+          </svg>
+          Stop
+        `;
+        
+        // Reset if at end
+        if (demoPosition >= 100) {
+          demoPosition = 0;
+        }
+        
+        // Initialize audio context (this will handle autoplay policy issues)
+        initAudioContext();
+        
+        // Resume context if suspended (needed for Chrome's autoplay policy)
+        if (tutorialState.audioContext && tutorialState.audioContext.state === 'suspended') {
+          tutorialState.audioContext.resume().then(() => {
+            console.log('AudioContext resumed successfully');
+          });
+        }
+        
+        // Wait a moment for the context to resume
+        setTimeout(() => {
+          // Get initial value and frequency
+          const initialValue = getDataValueAtPosition(sampleData, demoPosition);
+          const initialFreq = mapValueToFrequency(initialValue);
+          
+          // Update timeline
+          if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
+          if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
+          
+          // Start audio
+          playAudio('sine', initialFreq);
+          
+          // Update position line in visualizations
+          updateAudioDemoPosition(sampleData, demoPosition);
+          
+          // Start playback interval
+          demoInterval = setInterval(() => {
+            demoPosition += 1;
+            
+            if (demoPosition > 100) {
+              clearInterval(demoInterval);
+              demoInterval = null;
+              stopAudio();
+              demoIsPlaying = false;
+              
+              // Update button UI
+              playButton.innerHTML = `
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path d="M8 5v14l11-7z" fill="currentColor"/>
+                </svg>
+                Play
+              `;
+              return;
+            }
+            
+            // Update timeline
+            if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
+            if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
+            
+            // Update audio and position line
+            updateAudioDemoPosition(sampleData, demoPosition);
+            
+          }, 100); // Update every 100ms
+        }, 200);
+      }
+    }
+    
+    // Add the click handler
+    playButton.addEventListener('click', handlePlayClick);
+    
+    // Set up timeline click
+    const timelineTrack = playButton.parentElement.querySelector('.audio-timeline');
+    if (timelineTrack) {
+      timelineTrack.addEventListener('click', function(e) {
+        // Calculate click position as percentage
+        const rect = this.getBoundingClientRect();
+        demoPosition = ((e.clientX - rect.left) / rect.width) * 100;
+        
+        // Update timeline
+        if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
+        if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
+        
+        // If playing, update audio and position line
+        if (demoIsPlaying) {
+          updateAudioDemoPosition(sampleData, demoPosition);
+        }
+      });
+    }
+    
+    // Function to update position line and audio
+    function updateAudioDemoPosition(data, position) {
+      // Get data value at position
+      const dataValue = getDataValueAtPosition(data, position);
+      
+      // Update audio frequency
+      if (tutorialState.isPlaying) {
+        const frequency = mapValueToFrequency(dataValue);
+        updateFrequency(frequency);
+      }
+      
+      // Update position line in chart
+      const positionLine = d3.select('#audiovisual-chart svg').select('#position-line');
+      if (!positionLine.empty()) {
+        const width = d3.select('#audiovisual-chart svg').attr('width');
+        const margin = { left: 40, right: 20 };
+        const x = margin.left + (position / 100) * (width - margin.left - margin.right);
+        positionLine.attr('x1', x).attr('x2', x);
+        
+        // Update highlight point
+        const highlightPoint = d3.select('#audiovisual-chart svg').select('#highlight-point');
+        if (!highlightPoint.empty()) {
+          // Calculate index
+          const index = Math.floor((position / 100) * (data.length - 1));
+          
+          // Get y coordinate
+          const height = d3.select('#audiovisual-chart svg').attr('height');
+          const margin = { top: 20, bottom: 30 };
+          const yScale = d3.scaleLinear()
+            .domain([d3.min(data, d => d.y) * 0.9, d3.max(data, d => d.y) * 1.1])
+            .range([height - margin.bottom, margin.top]);
+          
+          const yValue = data[index].y;
+          const y = yScale(yValue);
+          
+          // Update point
+          highlightPoint
+            .attr('cx', x)
+            .attr('cy', y)
+            .attr('opacity', 1);
+        }
+      }
+    }
+  }
+  
+  
+  /**
+   * Generate sample data with a subtle pattern that's hard to see but easy to hear
+   */
+  function generateSampleDataWithPattern() {
+    const data = [];
+    
+    // Generate 100 data points
+    for (let i = 0; i < 100; i++) {
+      // Base value with noise
+      let value = 50 + (Math.random() * 15 - 7.5);
+      
+      // Add subtle patterns that are hard to see visually
+      
+      // Pattern 1: Small sine wave
+      value += Math.sin(i * 0.2) * 3;
+      
+      // Pattern 2: Three subtle peaks
+      if (i > 25 && i < 35) {
+        value += (i - 25) * 0.5;
+      } else if (i > 35 && i < 45) {
+        value += (45 - i) * 0.5;
+      }
+      
+      if (i > 55 && i < 65) {
+        value += (i - 55) * 0.6;
+      } else if (i > 65 && i < 75) {
+        value += (75 - i) * 0.6;
+      }
+      
+      // Pattern 3: Hidden anomaly spike
+      if (i === 82) value += 8;
+      
+      data.push({ x: i, y: value });
+    }
+    
+    return data;
+  }
+  
+  /**
+   * Create a simple line chart using D3.js
+   */
+  function createSimpleLineChart(container, data, isInteractive) {
+    if (!d3 || !container) return;
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Set dimensions
+    const width = container.clientWidth;
+    const height = container.clientHeight || 200;
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+    
+    // Create SVG
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+    
+    // Create scales
+    const xScale = d3.scaleLinear()
+      .domain([0, data.length - 1])
+      .range([margin.left, width - margin.right]);
+    
+    const yScale = d3.scaleLinear()
+      .domain([d3.min(data, d => d.y) * 0.9, d3.max(data, d => d.y) * 1.1])
+      .range([height - margin.bottom, margin.top]);
+    
+    // Create line generator
+    const line = d3.line()
+      .x(d => xScale(d.x))
+      .y(d => yScale(d.y))
+      .curve(d3.curveMonotoneX);
+    
+    // Add the line path
+    svg.append('path')
+      .datum(data)
+      .attr('fill', 'none')
+      .attr('stroke', isInteractive ? '#1db954' : '#4a90e2')
+      .attr('stroke-width', 2)
+      .attr('d', line);
+    
+    // Add axes
+    const xAxis = d3.axisBottom(xScale).ticks(5);
+    const yAxis = d3.axisLeft(yScale).ticks(5);
+    
+    svg.append('g')
+      .attr('transform', `translate(0, ${height - margin.bottom})`)
+      .call(xAxis)
+      .attr('color', '#666')
+      .selectAll('text')
+      .attr('fill', '#999');
+    
+    svg.append('g')
+      .attr('transform', `translate(${margin.left}, 0)`)
+      .call(yAxis)
+      .attr('color', '#666')
+      .selectAll('text')
+      .attr('fill', '#999');
+    
+    // If interactive, add vertical line to show current position
+    if (isInteractive) {
+      svg.append('line')
+        .attr('id', 'position-line')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '3,3')
+        .attr('y1', margin.top)
+        .attr('y2', height - margin.bottom)
+        .attr('x1', margin.left)
+        .attr('x2', margin.left);
+      
+      // Add circles to highlight points
+      svg.append('circle')
+        .attr('id', 'highlight-point')
+        .attr('r', 4)
+        .attr('fill', '#1db954')
+        .attr('cx', xScale(0))
+        .attr('cy', yScale(data[0].y))
+        .attr('opacity', 0);
+    }
+  }
+  
+  /**
+   * Get data value at a specific position percentage
+   */
+  function getDataValueAtPosition(data, positionPercent) {
+    const index = Math.floor((positionPercent / 100) * (data.length - 1));
+    return data[Math.min(data.length - 1, Math.max(0, index))].y;
+  }
+  
+  /**
+   * Map data value to audio frequency
+   */
+  function mapValueToFrequency(value) {
+    // Map to a pleasant audio range (220-880 Hz)
+    return 220 + ((value - 30) / 60) * 660;
+  }
+  
+  /**
+   * Clean up resources when leaving Step 1
+   */
+  function cleanupStep1() {
+    stopAudio();
+  }
+  
+  // =================================================================
+  // STEP 2: Data Navigation
+  // =================================================================
+  
+  function initStep2() {
+    console.log('Initializing step 2');
+    
+    // Initialize dataset chart
+    initDatasetChart();
+    
+    // Set up subject buttons
+    const subjectButtons = document.querySelectorAll('.compare-subjects .demo-btn');
+    subjectButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // Update active button
+        subjectButtons.forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Update chart with selected subject
+        const subject = this.dataset.subject;
+        console.log('Subject button clicked:', subject);
+        updateDatasetChart(subject);
+        
+        // Update dropdown if it exists
+        const subjectSelect = document.getElementById('subject-select');
+        if (subjectSelect) {
+          subjectSelect.value = subject;
+        }
+      });
+    });
+    
+    // Set up subject and metric dropdowns
+    const subjectSelect = document.getElementById('subject-select');
+    const metricSelect = document.getElementById('metric-select');
+    
+    if (subjectSelect) {
+      subjectSelect.addEventListener('change', function() {
+        const subject = this.value;
+        console.log('Subject dropdown changed:', subject);
+        updateDatasetChart(subject);
+        
+        // Also update active button
+        const subjectButtons = document.querySelectorAll('.compare-subjects .demo-btn');
+        subjectButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.subject === subject);
+        });
+      });
+    }
+    
+    if (metricSelect) {
+      metricSelect.addEventListener('change', function() {
+        const metric = this.value;
+        console.log('Metric dropdown changed:', metric);
+        // Update y-axis label and chart title
+        updateChartMetric(metric);
+      });
+    }
+  }
+  
+  /**
+   * Initialize the interactive dataset chart in step 2
+   */
+  function initDatasetChart() {
+    // Create the chart data if not already created
+    if (!tutorialState.chartData) {
+      tutorialState.chartData = generateExamDataset();
+    }
+    
+    const chartContainer = document.getElementById('dataset-chart');
+    if (!chartContainer) {
+      console.warn('Chart container not found');
+      return;
+    }
+    
+    // Get initial values
+    const subjectSelect = document.getElementById('subject-select');
+    const metricSelect = document.getElementById('metric-select');
+    
+    const initialSubject = subjectSelect ? subjectSelect.value : 'average';
+    const initialMetric = metricSelect ? metricSelect.value : 'hr';
+    
+    // Create chart
+    createDatasetChart(chartContainer, tutorialState.chartData, initialSubject, initialMetric);
+    
+    // Set up tooltip
+    const tooltip = document.getElementById('chart-tooltip');
+    
+    // Add interaction functionality
+    chartContainer.addEventListener('mousemove', handleChartMouseMove);
+    
+    // Function to handle mouse move on chart
+    function handleChartMouseMove(e) {
+      const rect = chartContainer.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Convert to chart coordinates
+      const xPercent = x / rect.width;
+      const timeValue = xPercent * 120; // 0-120 seconds exam time
+      
+      // Find closest data point
+      const subject = subjectSelect ? subjectSelect.value : 'average';
+      const metric = metricSelect ? metricSelect.value : 'hr';
+      
+      const subjectData = tutorialState.chartData[subject];
+      if (!subjectData) return;
+      
+      // Find closest data point
+      const closestPoint = findClosestDataPoint(subjectData, timeValue);
+      if (!closestPoint) return;
+      
+      // Move vertical line
+      const positionLine = document.getElementById('chart-position-line');
+      if (positionLine) {
+        positionLine.setAttribute('x1', x);
+        positionLine.setAttribute('x2', x);
+      }
+      
+      // Get Y coordinate
+      const yValue = closestPoint[metric];
+      if (tooltip && yValue !== undefined) {
+        // Position and show tooltip
+        tooltip.style.left = `${e.clientX + 10}px`;
+        tooltip.style.top = `${e.clientY - 30}px`;
+        tooltip.textContent = `Time: ${timeValue.toFixed(1)}s, ${getMetricDisplayName(metric)}: ${yValue.toFixed(1)}`;
+        tooltip.classList.remove('hidden');
+        
+        // Play sound if holding shift key
+        if (e.shiftKey && !tutorialState.isPlaying) {
+          const frequency = mapMetricToFrequency(yValue, metric);
+          playAudio('sine', frequency);
+        } else if (!e.shiftKey && tutorialState.isPlaying) {
+          stopAudio();
+        }
+      }
+    }
+    
+    // Hide tooltip on mouseout
+    chartContainer.addEventListener('mouseout', function() {
+      const tooltip = document.getElementById('chart-tooltip');
+      if (tooltip) {
+        tooltip.classList.add('hidden');
+      }
+      
+      // Stop any playing audio
+      if (tutorialState.isPlaying) {
+        stopAudio();
+      }
+    });
+    
+    // Add touch support for mobile
+    chartContainer.addEventListener('touchmove', handleChartTouchMove);
+    
+    // Function to handle touch move on chart
+    function handleChartTouchMove(e) {
+      const touch = e.touches[0];
+      const rect = chartContainer.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      
+      // Convert to chart coordinates
+      const xPercent = x / rect.width;
+      const timeValue = xPercent * 120; // 0-120 seconds exam time
+      
+      // Find closest data point
+      const subject = subjectSelect ? subjectSelect.value : 'average';
+      const metric = metricSelect ? metricSelect.value : 'hr';
+      
+      const subjectData = tutorialState.chartData[subject];
+      if (!subjectData) return;
+      
+      // Find closest data point
+      const closestPoint = findClosestDataPoint(subjectData, timeValue);
+      if (!closestPoint) return;
+      
+      // Move vertical line
+      const positionLine = document.getElementById('chart-position-line');
+      if (positionLine) {
+        positionLine.setAttribute('x1', x);
+        positionLine.setAttribute('x2', x);
+      }
+      
+      // Get Y coordinate for sound (automatically play sound on touch)
+      const yValue = closestPoint[metric];
+      if (yValue !== undefined) {
+        const frequency = mapMetricToFrequency(yValue, metric);
+        
+        if (!tutorialState.isPlaying) {
+          playAudio('sine', frequency);
+        } else {
+          updateFrequency(frequency);
+        }
+      }
+      
+      e.preventDefault(); // Prevent scroll
+    }
+    
+    chartContainer.addEventListener('touchend', function() {
+      // Stop any playing audio
+      if (tutorialState.isPlaying) {
+        stopAudio();
+      }
+    });
+  }
+
+  /**
+   * Create the dataset chart
+   */
+  function createDatasetChart(container, data, subject, metric) {
+    if (!d3 || !container || !data) return;
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Get subject data
+    const subjectData = data[subject] || [];
+    
+    // Set dimensions
+    const width = container.clientWidth;
+    const height = container.clientHeight || 250;
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+    
+    // Create SVG
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+    
+    // Create scales
+    const xScale = d3.scaleLinear()
+      .domain([0, 120]) // 0-120 seconds
+      .range([margin.left, width - margin.right]);
+    
+    // Get min/max values for the metric
+    const allValues = [].concat(...Object.values(data).map(points => 
+      points.map(p => p[metric])
+    )).filter(v => v !== undefined);
+    
+    const yMin = Math.floor(d3.min(allValues) * 0.95);
+    const yMax = Math.ceil(d3.max(allValues) * 1.05);
+    
+    const yScale = d3.scaleLinear()
+      .domain([yMin, yMax])
+      .range([height - margin.bottom, margin.top]);
+    
+    // Create line generator
+    const line = d3.line()
+      .x(d => xScale(d.time))
+      .y(d => yScale(d[metric]))
+      .curve(d3.curveMonotoneX);
+    
+    // Add the line path
+    svg.append('path')
+      .datum(subjectData)
+      .attr('fill', 'none')
+      .attr('stroke', getSubjectColor(subject))
+      .attr('stroke-width', 2)
+      .attr('d', line);
+    
+    // Add axes
+    const xAxis = d3.axisBottom(xScale).ticks(5);
+    const yAxis = d3.axisLeft(yScale).ticks(5);
+    
+    svg.append('g')
+      .attr('transform', `translate(0, ${height - margin.bottom})`)
+      .call(xAxis)
+      .attr('color', '#666')
+      .selectAll('text')
+      .attr('fill', '#999');
+    
+    svg.append('g')
+      .attr('transform', `translate(${margin.left}, 0)`)
+      .call(yAxis)
+      .attr('color', '#666')
+      .selectAll('text')
+      .attr('fill', '#999');
+    
+    // Add axes labels
+    svg.append('text')
+      .attr('class', 'axis-label x-axis-label')
+      .attr('text-anchor', 'middle')
+      .attr('x', width / 2)
+      .attr('y', height - 5)
+      .text('Time (seconds)')
+      .attr('fill', '#999')
+      .attr('font-size', '12px');
+    
+    svg.append('text')
+      .attr('class', 'axis-label y-axis-label')
+      .attr('text-anchor', 'middle')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -height / 2)
+      .attr('y', 15)
+      .text(getMetricDisplayName(metric))
+      .attr('fill', '#999')
+      .attr('font-size', '12px');
+    
+    // Add position line for interactive exploration
+    svg.append('line')
+      .attr('id', 'chart-position-line')
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3,3')
+      .attr('y1', margin.top)
+      .attr('y2', height - margin.bottom)
+      .attr('x1', margin.left)
+      .attr('x2', margin.left);
+      
+    // Add annotation lines
+    const annotations = [
+      { time: 10, label: 'Start of Test' },
+      { time: 60, label: 'Difficult Question' },
+      { time: 100, label: 'Time Warning' }
+    ];
+    
+    // Add vertical lines for annotations
+    annotations.forEach(anno => {
+      const x = xScale(anno.time);
+      
+      svg.append('line')
+        .attr('stroke', 'rgba(255, 255, 255, 0.2)')
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '3,3')
+        .attr('y1', margin.top)
+        .attr('y2', height - margin.bottom)
+        .attr('x1', x)
+        .attr('x2', x);
+    });
+  }
+  
+  /**
+   * Update the dataset chart for a different subject
+   */
+  function updateDatasetChart(subject) {
+    const chartContainer = document.getElementById('dataset-chart');
+    const metricSelect = document.getElementById('metric-select');
+    
+    if (!chartContainer || !tutorialState.chartData) return;
+    
+    const metric = metricSelect ? metricSelect.value : 'hr';
+    
+    // Recreate chart
+    createDatasetChart(chartContainer, tutorialState.chartData, subject, metric);
+  }
+  
+  /**
+   * Update the chart metric
+   */
+  function updateChartMetric(metric) {
+    const chartContainer = document.getElementById('dataset-chart');
+    const subjectSelect = document.getElementById('subject-select');
+    
+    if (!chartContainer || !tutorialState.chartData) return;
+    
+    const subject = subjectSelect ? subjectSelect.value : 'average';
+    
+    // Recreate chart
+    createDatasetChart(chartContainer, tutorialState.chartData, subject, metric);
+  }
+  
+  /**
+   * Generate a realistic exam dataset for the tutorial
+   */
+  function generateExamDataset() {
+    // Create a dataset with multiple subjects
+    const dataset = {
+      average: [],
+      subject1: [],
+      subject2: [],
+      subject3: []
+    };
+    
+    // Generate time points (0-120 seconds in 1-second intervals)
+    for (let time = 0; time <= 120; time++) {
+      // Subject 1 - Steady, low stress
+      dataset.subject1.push({
+        time: time,
+        hr: 70 + (Math.sin(time * 0.1) * 5) + (Math.random() * 3),
+        gsr: 5 + (Math.sin(time * 0.05) * 1) + (Math.random() * 0.5),
+        temp: 36.5 + (Math.sin(time * 0.02) * 0.2) + (Math.random() * 0.1)
+      });
+      
+      // Subject 2 - Moderate stress with peaks
+      let subject2HR = 75 + (Math.sin(time * 0.1) * 8);
+      
+      // Add specific stress peaks
+      if (time > 55 && time < 70) {
+        subject2HR += (time - 55) * 0.8; // Gradual increase
+      } else if (time > 70 && time < 85) {
+        subject2HR += (85 - time) * 0.8; // Gradual decrease
+      }
+      
+      // Final time warning spike
+      if (time > 95 && time < 105) {
+        subject2HR += 15;
+      }
+      
+      dataset.subject2.push({
+        time: time,
+        hr: subject2HR + (Math.random() * 3),
+        gsr: 6 + (Math.sin(time * 0.08) * 2) + (Math.random() * 0.8),
+        temp: 36.7 + (Math.sin(time * 0.03) * 0.3) + (Math.random() * 0.1)
+      });
+      
+      // Subject 3 - High stress with dramatic peaks
+      let subject3HR = 85 + (Math.sin(time * 0.2) * 10);
+      
+      // Add specific stress peaks (more dramatic)
+      if (time > 20 && time < 30) {
+        subject3HR += 20; // Initial stress spike
+      }
+      
+      if (time > 60 && time < 75) {
+        subject3HR += 25; // Major stress peak during difficult question
+      }
+      
+      if (time > 95 && time < 110) {
+        subject3HR += 30; // Severe stress when time is running out
+      }
+      
+      dataset.subject3.push({
+        time: time,
+        hr: subject3HR + (Math.random() * 5),
+        gsr: 8 + (Math.sin(time * 0.1) * 3) + (Math.random() * 1.5),
+        temp: 37.1 + (Math.sin(time * 0.05) * 0.4) + (Math.random() * 0.2)
+      });
+    }
+    
+    // Generate average data from the 3 subjects
+    for (let time = 0; time <= 120; time++) {
+      const s1 = dataset.subject1.find(d => d.time === time);
+      const s2 = dataset.subject2.find(d => d.time === time);
+      const s3 = dataset.subject3.find(d => d.time === time);
+      
+      if (s1 && s2 && s3) {
+        dataset.average.push({
+          time: time,
+          hr: (s1.hr + s2.hr + s3.hr) / 3,
+          gsr: (s1.gsr + s2.gsr + s3.gsr) / 3,
+          temp: (s1.temp + s2.temp + s3.temp) / 3
+        });
+      }
+    }
+    
+    return dataset;
+  }
+  
+  /**
+   * Find the closest data point to a given time value
+   */
+  function findClosestDataPoint(data, timeValue) {
+    if (!data || data.length === 0) return null;
+    
+    let closest = data[0];
+    let minDist = Math.abs(data[0].time - timeValue);
+    
+    for (let i = 1; i < data.length; i++) {
+      const dist = Math.abs(data[i].time - timeValue);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = data[i];
+      }
+    }
+    
+    return closest;
+  }
+  
+  /**
+   * Get display name for a metric
+   */
+  function getMetricDisplayName(metric) {
+    const names = {
+      hr: 'Heart Rate (BPM)',
+      gsr: 'Galvanic Skin Response',
+      temp: 'Body Temperature (°C)'
+    };
+    
+    return names[metric] || metric;
+  }
+  
+  /**
+   * Get color for a subject
+   */
+  function getSubjectColor(subject) {
+    const colors = {
+      average: '#1db954', // Green
+      subject1: '#4a90e2', // Blue
+      subject2: '#f5a623', // Orange
+      subject3: '#d0021b'  // Red
+    };
+    
+    return colors[subject] || '#1db954';
+  }
+  
+  /**
+   * Map metric value to frequency
+   */
+  function mapMetricToFrequency(value, metric) {
+    switch (metric) {
+      case 'hr':
+        // 220-880 Hz range mapping
+        return 220 + Math.min(660, Math.max(0, (value - 60) / 80 * 660));
+      case 'gsr':
+        // 330-1100 Hz range mapping
+        return 330 + Math.min(770, Math.max(0, (value - 2) / 15 * 770));
+      case 'temp':
+        // 165-660 Hz range mapping
+        return 165 + Math.min(495, Math.max(0, (value - 36) / 2 * 495));
+      default:
+        return 440; // A4 as default
+    }
+  }
+  
+  /**
+   * Clean up resources when leaving Step 2
+   */
+  function cleanupStep2() {
+    stopAudio();
+  }
+  
+  // =================================================================
+  // STEP 3: Audio Visualizer Controls
+  // =================================================================
+  
+  function initStep3() {
+    console.log('Initializing step 3');
+    
+    // Set up player timeline
+    initPlayerTimeline();
+    
+    // Set up player controls
+    initPlayerControls();
+  }
+  
+  /**
+   * Initialize player timeline with visualizations
+   */
+  function initPlayerTimeline() {
+    // Generate visualization data if needed
+    if (!tutorialState.playerData) {
+      // Use data from step 2 if available
+      if (tutorialState.chartData && tutorialState.chartData.average) {
+        tutorialState.playerData = tutorialState.chartData.average;
+      } else {
+        // Generate new data
+        const playerData = [];
+        for (let i = 0; i <= 90; i++) {
+          playerData.push({
+            time: i,
+            hr: 70 + (Math.sin(i * 0.1) * 10) + (Math.random() * 5),
+            gsr: 6 + (Math.sin(i * 0.08) * 2) + (Math.random() * 0.8),
+            temp: 36.7 + (Math.sin(i * 0.03) * 0.3) + (Math.random() * 0.1)
+          });
+        }
+        tutorialState.playerData = playerData;
+      }
+    }
+    
+    // Create mini chart
+    const chartContainer = document.getElementById('player-chart');
+    if (chartContainer) {
+      createMiniChart(chartContainer, tutorialState.playerData);
+    }
+    
+    // Create mini waveform
+    const waveformContainer = document.getElementById('player-waveform');
+    if (waveformContainer) {
+      createMiniWaveform(waveformContainer);
+    }
+  }
+  
+  /**
+   * Create a mini version of the chart
+   */
+  function createMiniChart(container, data) {
+    if (!d3 || !container || !data) return;
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Set dimensions
+    const width = container.clientWidth;
+    const height = container.clientHeight || 150;
+    const margin = { top: 10, right: 10, bottom: 20, left: 30 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+    
+    // Create SVG
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+    
+    // Create scales
+    const xScale = d3.scaleLinear()
+      .domain([0, 90]) // 0-90 seconds
+      .range([margin.left, width - margin.right]);
+    
+    // Get min/max values for heart rate
+    const metric = 'hr';
+    const allValues = data.map(p => p[metric]).filter(v => v !== undefined);
+    
+    const yMin = Math.floor(d3.min(allValues) * 0.95);
+    const yMax = Math.ceil(d3.max(allValues) * 1.05);
+    
+    const yScale = d3.scaleLinear()
+      .domain([yMin, yMax])
+      .range([height - margin.bottom, margin.top]);
+    
+    // Create line generator
+    const line = d3.line()
+      .x(d => xScale(d.time))
+      .y(d => yScale(d[metric]))
+      .curve(d3.curveMonotoneX);
+    
+    // Add the line path
+    svg.append('path')
+      .datum(data)
+      .attr('fill', 'none')
+      .attr('stroke', '#1db954')
+      .attr('stroke-width', 2)
+      .attr('d', line);
+    
+    // Add axes
+    const xAxis = d3.axisBottom(xScale).ticks(3);
+    const yAxis = d3.axisLeft(yScale).ticks(3);
+    
+    svg.append('g')
+      .attr('transform', `translate(0, ${height - margin.bottom})`)
+      .call(xAxis)
+      .attr('color', '#666')
+      .selectAll('text')
+      .attr('fill', '#999')
+      .attr('font-size', '10px');
+    
+    svg.append('g')
+      .attr('transform', `translate(${margin.left}, 0)`)
+      .call(yAxis)
+      .attr('color', '#666')
+      .selectAll('text')
+      .attr('fill', '#999')
+      .attr('font-size', '10px');
+    
+    // Add position line for the player
+    svg.append('line')
+      .attr('id', 'player-position-line')
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3,3')
+      .attr('y1', margin.top)
+      .attr('y2', height - margin.bottom)
+      .attr('x1', margin.left)
+      .attr('x2', margin.left);
+  }
+  
+  /**
+   * Create a mini waveform visualization
+   */
+  function createMiniWaveform(container) {
+    if (!container) return;
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Create bars
+    const barCount = 40;
+    const barWidth = 3;
+    const barGap = 1;
+    
+    for (let i = 0; i < barCount; i++) {
+      // Create top and bottom bars
+      const topBar = document.createElement('div');
+      topBar.className = 'waveform-bar';
+      topBar.style.position = 'absolute';
+      topBar.style.width = `${barWidth}px`;
+      topBar.style.bottom = '50%';
+      topBar.style.left = `${i * (barWidth + barGap) + 10}px`;
+      topBar.style.height = '15px';
+      topBar.style.backgroundColor = '#1db954';
+      topBar.style.borderRadius = '1px 1px 0 0';
+      
+      const bottomBar = document.createElement('div');
+      bottomBar.className = 'waveform-bar';
+      bottomBar.style.position = 'absolute';
+      bottomBar.style.width = `${barWidth}px`;
+      bottomBar.style.top = '50%';
+      bottomBar.style.left = `${i * (barWidth + barGap) + 10}px`;
+      bottomBar.style.height = '15px';
+      bottomBar.style.backgroundColor = '#1db954';
+      bottomBar.style.borderRadius = '0 0 1px 1px';
+      
+      container.appendChild(topBar);
+      container.appendChild(bottomBar);
+    }
+  }
+  
+  /**
+   * Initialize player controls
+   */
+  function initPlayerControls() {
+    // Set up play button
+    const playButton = document.getElementById('play-btn');
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    const timelineProgress = document.getElementById('player-timeline-progress');
+    const timelineHandle = document.getElementById('player-timeline-handle');
+    const currentTime = document.getElementById('current-time');
+    const skipBackBtn = document.getElementById('skip-back');
+    const skipForwardBtn = document.getElementById('skip-forward');
+    
+    if (playButton && playIcon && pauseIcon) {
+      playButton.addEventListener('click', function() {
+        togglePlayerPlayback();
+      });
+    }
+    
+    // Set up volume slider
+    const volumeSlider = document.getElementById('volume-slider');
+    if (volumeSlider) {
+      volumeSlider.addEventListener('input', function() {
+        const volume = this.value / 100;
+        updateVolume(volume);
+      });
+    }
+    
+    // Set up speed slider
+    const speedSlider = document.getElementById('speed-slider');
+    const speedValue = document.getElementById('speed-value');
+    if (speedSlider && speedValue) {
+      speedSlider.addEventListener('input', function() {
+        const speed = parseFloat(this.value);
+        speedValue.textContent = `${speed.toFixed(1)}×`;
+        tutorialState.playbackSpeed = speed;
+      });
+    }
+    
+    // Set up waveform selector
+    const waveformSelect = document.getElementById('waveform-select');
+    if (waveformSelect) {
+      waveformSelect.addEventListener('change', function() {
+        tutorialState.currentWaveType = this.value;
+        
+        // If currently playing, update the oscillator type
+        if (tutorialState.isPlaying && tutorialState.oscillator) {
+          // If changing to/from custom, need to recreate oscillator
+          if (this.value === 'custom' || tutorialState.oscillator.type === 'custom') {
+            // Remember current frequency
+            const currentFreq = tutorialState.oscillator.frequency.value;
+            stopAudio();
+            playAudio(this.value, currentFreq);
+          } else {
+            tutorialState.oscillator.type = this.value;
+          }
+        }
+      });
+    }
+    
+    // Set up timeline click
+    const timelineTrack = document.querySelector('.player-timeline .timeline-track');
+    if (timelineTrack && timelineProgress && timelineHandle) {
+      timelineTrack.addEventListener('click', function(e) {
+        // Calculate click position as percentage
+        const rect = this.getBoundingClientRect();
+        const position = ((e.clientX - rect.left) / rect.width) * 100;
+        
+        // Update position
+        updatePlayerPosition(position);
+        
+        // If playing, update audio
+        if (tutorialState.playerIsPlaying && tutorialState.oscillator) {
+          updatePlayerAudio(position);
+        }
+      });
+    }
+    
+    // Set up skip buttons
+    if (skipBackBtn) {
+      skipBackBtn.addEventListener('click', function() {
+        skipPlayerPosition(-10);
+      });
+    }
+    
+    if (skipForwardBtn) {
+      skipForwardBtn.addEventListener('click', function() {
+        skipPlayerPosition(10);
+      });
+    }
+    
+    // Set up example button
+    const examplePlayBtn = document.getElementById('example-play');
+    if (examplePlayBtn) {
+      examplePlayBtn.addEventListener('click', function() {
+        if (tutorialState.playerIsPlaying) {
+          stopPlayerPlayback();
+          this.textContent = 'Try Example';
+        } else {
+          // Start from beginning
+          updatePlayerPosition(0);
+          startPlayerPlayback();
+          this.textContent = 'Stop Example';
+        }
+      });
+    }
+  }
+  
+  /**
+   * Toggle player playback
+   */
+  function togglePlayerPlayback() {
+    if (tutorialState.playerIsPlaying) {
+      stopPlayerPlayback();
+    } else {
+      startPlayerPlayback();
+    }
+  }
+  
+  /**
+   * Start player playback
+   */
+  function startPlayerPlayback() {
+    // Update UI
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    if (playIcon && pauseIcon) {
+      playIcon.classList.add('hidden');
+      pauseIcon.classList.remove('hidden');
+    }
+    
+    // Update state
+    tutorialState.playerIsPlaying = true;
+    
+    // Start from current position
+    const currentPosition = tutorialState.playerPosition || 0;
+    
+    // Reset if at end
+    if (currentPosition >= 100) {
+      updatePlayerPosition(0);
+    }
+    
+    // Start audio
+    const waveformSelect = document.getElementById('waveform-select');
+    const waveType = waveformSelect ? waveformSelect.value : 'sine';
+    
+    // Get frequency based on current position
+    updatePlayerAudio(currentPosition);
+    
+    // Start playback interval
+    tutorialState.playerInterval = setInterval(() => {
+      // Get current position
+      let position = tutorialState.playerPosition;
+      
+      // Apply speed
+      position += 0.5 * (tutorialState.playbackSpeed || 1.0);
+      
+      if (position >= 100) {
+        stopPlayerPlayback();
+        return;
+      }
+      
+      // Update position
+      updatePlayerPosition(position);
+      
+      // Update audio
+      updatePlayerAudio(position);
+      
+    }, 100); // Update 10 times per second
+  }
+
+  /**
+ * Update player audio based on position
+ */
+function updatePlayerAudio(position) {
+    if (!tutorialState.playerData) return;
+    
+    // Get data value at position
+    const timeValue = (position / 100) * 90; // 0-90 seconds range
+    const dataPoint = findClosestDataPoint(tutorialState.playerData, timeValue);
+    
+    if (!dataPoint) return;
+    
+    // Get current waveform type
+    const waveformSelect = document.getElementById('waveform-select');
+    const waveType = waveformSelect ? waveformSelect.value : 'sine';
+    
+    // Calculate frequency based on heart rate
+    const frequency = mapMetricToFrequency(dataPoint.hr, 'hr');
+    
+    // Start or update audio
+    if (!tutorialState.isPlaying) {
+      playAudio(waveType, frequency);
+    } else {
+      updateFrequency(frequency);
+    }
+    
+    // Update visualizations
+    updatePlayerVisualizations(position, dataPoint);
+  }
+  
+  /**
+   * Update player visualizations based on current position and data
+   */
+  function updatePlayerVisualizations(position, dataPoint) {
+    // Update position line in chart
+    const positionLine = document.getElementById('player-position-line');
+    if (positionLine) {
+      const chartContainer = document.getElementById('player-chart');
+      if (chartContainer) {
+        const width = chartContainer.clientWidth;
+        const margin = { left: 30, right: 10 };
+        const innerWidth = width - margin.left - margin.right;
+        const x = margin.left + (position / 100) * innerWidth;
+        positionLine.setAttribute('x1', x);
+        positionLine.setAttribute('x2', x);
+      }
+    }
+    
+    // Update waveform bars
+    const waveformContainer = document.getElementById('player-waveform');
+    if (waveformContainer) {
+      const bars = waveformContainer.querySelectorAll('.waveform-bar');
+      const normValue = (dataPoint.hr - 60) / 60; // Normalize between 0-1
+      
+      bars.forEach((bar, index) => {
+        // Calculate height based on heart rate and position
+        const baseHeight = 5 + (normValue * 25);
+        const variance = Math.sin(index * 0.3 + position * 0.05) * 10;
+        const height = baseHeight + variance * normValue;
+        
+        bar.style.height = `${Math.max(2, height)}px`;
+        
+        // Color based on value
+        const hue = 120 - (normValue * 120); // Green to red
+        bar.style.backgroundColor = `hsl(${hue}, 80%, 50%)`;
+      });
+    }
+    
+    // Update pulse circle
+    const pulseCircle = document.getElementById('player-pulse-circle');
+    if (pulseCircle && dataPoint) {
+      // Scale circle based on heart rate
+      const size = 60 + (dataPoint.hr - 60) / 60 * 40;
+      pulseCircle.style.width = `${size}px`;
+      pulseCircle.style.height = `${size}px`;
+      
+      // Adjust color
+      const hue = 120 - ((dataPoint.hr - 60) / 60 * 120);
+      pulseCircle.style.backgroundColor = `hsla(${hue}, 70%, 50%, 0.3)`;
+      pulseCircle.style.boxShadow = `0 0 30px hsla(${hue}, 70%, 60%, 0.3)`;
+      
+      // Adjust animation speed
+      const animDuration = 60 / dataPoint.hr; // seconds per beat
+      pulseCircle.style.animationDuration = `${animDuration}s`;
+    }
+  }
+  
+  /**
+   * Stop player playback
+   */
+  function stopPlayerPlayback() {
+    // Clear interval
+    if (tutorialState.playerInterval) {
+      clearInterval(tutorialState.playerInterval);
+      tutorialState.playerInterval = null;
+    }
+    
+    // Stop audio
+    stopAudio();
+    
+    // Update UI
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    if (playIcon && pauseIcon) {
+      playIcon.classList.remove('hidden');
+      pauseIcon.classList.add('hidden');
+    }
+    
+    // Update state
+    tutorialState.playerIsPlaying = false;
+    
+    // Update example button if exists
+    const examplePlayBtn = document.getElementById('example-play');
+    if (examplePlayBtn) {
+      examplePlayBtn.textContent = 'Try Example';
+    }
+  }
+
+  
+  // Skip player position by percentage
+  function skipPlayerPosition(percentage) {
+    const newPosition = Math.max(0, Math.min(100, tutorialState.playerPosition + percentage));
+    updatePlayerPosition(newPosition);
+    
+    // Update audio if playing
+    if (tutorialState.playerIsPlaying) {
+      updatePlayerAudio(newPosition);
+    }
+  }
+  
+  // Format time in seconds to MM:SS format
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+  
+  // Update player visualizations
+  function updatePlayerVisualizations(position, dataPoint) {
+    // Update waveform bars
+    const waveformContainer = document.getElementById('player-waveform');
+    if (waveformContainer) {
+      const bars = waveformContainer.querySelectorAll('.waveform-bar');
+      bars.forEach((bar, index) => {
+        // Calculate height based on heart rate and position
+        const height = 5 + Math.abs(Math.sin(index * 0.2 + position * 0.05) * 20);
+        bar.style.height = `${height}px`;
+      });
+    }
+    
+    // Update pulse circle
+    const pulseCircle = document.getElementById('player-pulse-circle');
+    if (pulseCircle && dataPoint) {
+      // Scale circle based on heart rate
+      const size = 60 + (dataPoint.hr - 60) / 60 * 40;
+      pulseCircle.style.width = `${size}px`;
+      pulseCircle.style.height = `${size}px`;
+      
+      // Adjust animation speed
+      const animDuration = 60 / dataPoint.hr; // seconds per beat
+      pulseCircle.style.animationDuration = `${animDuration}s`;
+    }
+  }
+  
+  // Add missing step functions
+  function cleanupStep3() {
+    // Stop any playing audio
+    if (tutorialState.isPlaying) {
+      stopAudio();
+    }
+    
+    // Stop player playback
+    if (tutorialState.playerIsPlaying) {
+      stopPlayerPlayback();
+    }
+  }
+  
+  function initStep4() {
+    console.log('Initializing step 4');
+    
+    // Set up waveform canvas
+    const canvas = document.getElementById('waveform-canvas');
+    if (canvas) {
+      setupWaveformCanvas(canvas);
+    }
+    
+    // Set up waveform card buttons
+    const playButtons = document.querySelectorAll('.play-wave-btn');
+    playButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const waveType = this.dataset.wave;
+        
+        if (tutorialState.isPlaying) {
+          stopAudio();
+          this.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M8 5v14l11-7z" fill="currentColor"/>
+            </svg>
+            Play
+          `;
+        } else {
+          playWaveform(waveType);
+          
+          // Update all buttons
+          playButtons.forEach(btn => {
+            btn.innerHTML = `
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M8 5v14l11-7z" fill="currentColor"/>
+              </svg>
+              Play
+            `;
+          });
+          
+          // Update this button
+          this.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+            </svg>
+            Stop
+          `;
+        }
+      });
+    });
+    
+    // Set up custom wave controls
+    const clearButton = document.getElementById('clear-canvas');
+    const smoothButton = document.getElementById('smooth-wave');
+    const playCustomButton = document.getElementById('play-custom-wave');
+    
+    if (clearButton) {
+      clearButton.addEventListener('click', clearWaveformCanvas);
+    }
+    
+    if (smoothButton) {
+      smoothButton.addEventListener('click', smoothWaveformPath);
+    }
+    
+    if (playCustomButton) {
+      playCustomButton.addEventListener('click', playCustomWaveform);
+    }
+  }
+  
+  function cleanupStep4() {
+    // Stop any playing audio
+    if (tutorialState.isPlaying) {
+      stopAudio();
+    }
+  }
+  
+  function initStep5() {
+    console.log('Initializing step 5');
+    
+    // Set up browse button
+    const browseButton = document.getElementById('browse-files');
+    if (browseButton) {
+      browseButton.addEventListener('click', function() {
+        // Simulate file selection dialog
+        alert('In the actual application, this would open a file selection dialog');
+      });
+    }
+    
+    // Set up finish tutorial button
+    const finishButton = document.getElementById('finish-tutorial');
+    if (finishButton) {
+      finishButton.addEventListener('click', function() {
+        window.location.href = 'albums.html';
+      });
+    }
+  }
+  
+  function cleanupStep5() {
+    // No cleanup needed
+  }
+  
+ /**
+ * Set up waveform canvas for drawing
+ */
+function setupWaveformCanvas(canvas) {
+  // Reset canvas
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#121212';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw center line
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height / 2);
+  ctx.lineTo(canvas.width, canvas.height / 2);
+  ctx.stroke();
+  
+  // Set up drawing state
+  tutorialState.isDrawing = false;
+  tutorialState.drawPath = [];
+  
+  // Clean up any existing event listeners to prevent duplicates
+  canvas.removeEventListener('mousedown', startDrawing);
+  canvas.removeEventListener('mousemove', draw);
+  canvas.removeEventListener('mouseup', stopDrawing);
+  canvas.removeEventListener('mouseout', stopDrawing);
+  canvas.removeEventListener('touchstart', handleTouchStart);
+  canvas.removeEventListener('touchmove', handleTouchMove);
+  canvas.removeEventListener('touchend', stopDrawing);
+  
+  // Set up event listeners with proper event handling
+  canvas.addEventListener('mousedown', startDrawing);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', stopDrawing);
+  canvas.addEventListener('mouseout', stopDrawing);
+  
+  // Touch support with proper handlers
+  canvas.addEventListener('touchstart', handleTouchStart);
+  canvas.addEventListener('touchmove', handleTouchMove);
+  canvas.addEventListener('touchend', stopDrawing);
+  
+  // Handler for touch start
+  function handleTouchStart(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    // Call start drawing with correct coordinates
+    startDrawingWithCoords(x, y);
+  }
+  
+  // Handler for touch move
+  function handleTouchMove(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    // Call draw with correct coordinates
+    drawWithCoords(x, y);
+  }
+}
+
+
+function startDrawing(e) {
+ const canvas = document.getElementById('waveform-canvas');
+ if (!canvas) return;
+ 
+ // Get correct coordinates relative to canvas
+ const rect = canvas.getBoundingClientRect();
+ const x = e.clientX - rect.left;
+ const y = e.clientY - rect.top;
+ 
+ // Start drawing with these coordinates
+ startDrawingWithCoords(x, y);
+}
+
+/**
+* Start drawing with specific coordinates
+*/
+function startDrawingWithCoords(x, y) {
+ const canvas = document.getElementById('waveform-canvas');
+ if (!canvas) return;
+ 
+ const ctx = canvas.getContext('2d');
+ 
+ // Update drawing state
+ tutorialState.isDrawing = true;
+ tutorialState.drawPath = [{x, y}];
+ 
+ // Begin path
+ ctx.strokeStyle = '#1db954';
+ ctx.lineWidth = 2;
+ ctx.lineCap = 'round';
+ ctx.lineJoin = 'round';
+ 
+ ctx.beginPath();
+ ctx.moveTo(x, y);
+ ctx.lineTo(x, y);
+ ctx.stroke();
+ 
+ console.log('Drawing started at', x, y);
+}
+
+/**
+* Draw on canvas
+*/
+function draw(e) {
+ if (!tutorialState.isDrawing) return;
+ 
+ const canvas = document.getElementById('waveform-canvas');
+ if (!canvas) return;
+ 
+ // Get correct coordinates relative to canvas
+ const rect = canvas.getBoundingClientRect();
+ const x = e.clientX - rect.left;
+ const y = e.clientY - rect.top;
+ 
+ // Draw with these coordinates
+ drawWithCoords(x, y);
+}
+
+/**
+* Draw with specific coordinates
+*/
+function drawWithCoords(x, y) {
+ if (!tutorialState.isDrawing) return;
+ 
+ const canvas = document.getElementById('waveform-canvas');
+ if (!canvas) return;
+ 
+ const ctx = canvas.getContext('2d');
+ 
+ // Add point to path
+ tutorialState.drawPath.push({x, y});
+ 
+ // Draw line
+ ctx.lineTo(x, y);
+ ctx.stroke();
+}
+
+/**
+* Stop drawing
+*/
+function stopDrawing() {
+ tutorialState.isDrawing = false;
+ console.log('Drawing stopped, path has', tutorialState.drawPath.length, 'points');
+}
+  
+  function clearWaveformCanvas() {
+    const canvas = document.getElementById('waveform-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Clear canvas
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw center line
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+    
+    // Clear path
+    tutorialState.drawPath = [];
+  }
+  
+  function smoothWaveformPath() {
+    if (!tutorialState.drawPath || tutorialState.drawPath.length < 3) return;
+    
+    const canvas = document.getElementById('waveform-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Create a smoothed path using moving average
+    const smoothedPath = [];
+    const windowSize = 5;
+    
+    for (let i = 0; i < tutorialState.drawPath.length; i++) {
+      let sumX = 0;
+      let sumY = 0;
+      let count = 0;
+      
+      // Calculate window bounds
+      const start = Math.max(0, i - Math.floor(windowSize / 2));
+      const end = Math.min(tutorialState.drawPath.length - 1, i + Math.floor(windowSize / 2));
+      
+      // Sum points in window
+      for (let j = start; j <= end; j++) {
+        sumX += tutorialState.drawPath[j].x;
+        sumY += tutorialState.drawPath[j].y;
+        count++;
+      }
+      
+      // Calculate average
+      smoothedPath.push({
+        x: sumX / count,
+        y: sumY / count
+      });
+    }
+    
+    // Clear canvas
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw center line
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+    
+    // Draw smoothed path
+    ctx.strokeStyle = '#1db954';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(smoothedPath[0].x, smoothedPath[0].y);
+    
+    for (let i = 1; i < smoothedPath.length; i++) {
+      ctx.lineTo(smoothedPath[i].x, smoothedPath[i].y);
+    }
+    
+    ctx.stroke();
+    
+    // Update path
+    tutorialState.drawPath = smoothedPath;
+  }
+  
+  function playWaveform(type) {
+    // Stop any currently playing audio
+    if (tutorialState.isPlaying) {
+      stopAudio();
+    }
+    
+    // Play new audio
+    playAudio(type, 440);
+  }
+  
+  function playCustomWaveform() {
+    if (!tutorialState.drawPath || tutorialState.drawPath.length < 2) {
+      alert('Please draw a waveform first');
+      return;
+    }
+    
+    // Stop any currently playing audio
+    if (tutorialState.isPlaying) {
+      stopAudio();
+    }
+    
+    // Use a custom oscillator with PeriodicWave
+    initAudioContext();
+    
+    try {
+      const samples = generateWaveformSamples();
+      if (samples) {
+        const wave = createPeriodicWave(samples);
+        
+        // Play with custom wave
+        tutorialState.oscillator = tutorialState.audioContext.createOscillator();
+        tutorialState.oscillator.setPeriodicWave(wave);
+        tutorialState.oscillator.frequency.value = 440;
+        
+        // Connect and start
+        tutorialState.oscillator.connect(tutorialState.gainNode);
+        tutorialState.oscillator.start();
+        tutorialState.isPlaying = true;
+        tutorialState.currentWaveType = 'custom';
+        
+        // Update button
+        const playCustomButton = document.getElementById('play-custom-wave');
+        if (playCustomButton) {
+          playCustomButton.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+            </svg>
+            Stop
+          `;
+          
+          // Add click handler to stop
+          const originalClickHandler = playCustomButton.onclick;
+          playCustomButton.onclick = function() {
+            if (tutorialState.isPlaying) {
+              stopAudio();
+              this.innerHTML = `
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path d="M8 5v14l11-7z" fill="currentColor"/>
+                </svg>
+                Play Your Wave
+              `;
+              // Restore original click handler
+              this.onclick = originalClickHandler;
+            }
+          };
+        }
+      }
+    } catch (e) {
+      console.error('Error playing custom waveform:', e);
+    }
+  }
+  
+  function generateWaveformSamples() {
+    if (!tutorialState.drawPath || tutorialState.drawPath.length < 2) return null;
+    
+    const canvas = document.getElementById('waveform-canvas');
+    if (!canvas) return null;
+    
+    // Sort points by x coordinate
+    const sortedPath = [...tutorialState.drawPath].sort((a, b) => a.x - b.x);
+    
+    // Create 32 samples
+    const samples = new Float32Array(32);
+    const centerY = canvas.height / 2;
+    
+    for (let i = 0; i < 32; i++) {
+      // Calculate x position for this sample
+      const x = (i / 32) * canvas.width;
+      
+      // Find nearest points
+      let before = sortedPath[0];
+      let after = sortedPath[sortedPath.length - 1];
+      
+      for (let j = 0; j < sortedPath.length - 1; j++) {
+        if (sortedPath[j].x <= x && sortedPath[j + 1].x >= x) {
+          before = sortedPath[j];
+          after = sortedPath[j + 1];
+          break;
+        }
+      }
+      
+      // Interpolate y value
+      let y;
+      if (after.x === before.x) {
+        y = before.y;
+      } else {
+        const t = (x - before.x) / (after.x - before.x);
+        y = before.y + t * (after.y - before.y);
+      }
+      
+      // Convert to -1 to 1 range (y increases downward in canvas)
+      samples[i] = -((y - centerY) / centerY);
+    }
+    
+    return samples;
+  }
+  
+  function createPeriodicWave(samples) {
+    if (!tutorialState.audioContext) return null;
+    
+    // Create real and imaginary components
+    const real = new Float32Array(samples.length);
+    const imag = new Float32Array(samples.length);
+    
+    // Set DC component to 0
+    real[0] = 0;
+    imag[0] = 0;
+    
+    // Simple conversion from time domain to frequency domain
+    for (let n = 1; n < samples.length; n++) {
+      real[n] = samples[n];
+      imag[n] = 0;
+    }
+    
+    return tutorialState.audioContext.createPeriodicWave(real, imag);
+  }
+  
