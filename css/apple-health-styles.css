@@ -1,0 +1,355 @@
+/**
+ * apple-health-styles.css
+ * Specialized styling for Apple Health integration
+ */
+
+/* Apple Health branding colors */
+:root {
+    --apple-health-primary: #FF2D55;
+    --apple-health-secondary: #FF375F;
+    --apple-health-light: #FFBECB;
+    --apple-health-dark: #D30F3C;
+    --apple-health-accent: #5AC8FA;
+  }
+  
+  /* Tab navigation */
+  .tab-navigation {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .tab-button {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    outline: none;
+  }
+  
+  .tab-button.active {
+    color: #1db954;
+    border-bottom: 2px solid #1db954;
+  }
+  
+  .tab-button[data-tab="apple-health"].active {
+    color: var(--apple-health-primary);
+    border-bottom: 2px solid var(--apple-health-primary);
+  }
+  
+  .tab-button:hover:not(.active) {
+    color: #ffffff;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Apple Health section styling */
+  .apple-health-section .upload-prompt svg {
+    fill: var(--apple-health-primary);
+    filter: drop-shadow(0 0 5px rgba(255, 45, 85, 0.3));
+    animation: pulse-glow 2s infinite alternate;
+  }
+  
+  @keyframes pulse-glow {
+    0% { filter: drop-shadow(0 0 3px rgba(255, 45, 85, 0.3)); }
+    100% { filter: drop-shadow(0 0 6px rgba(255, 45, 85, 0.6)); }
+  }
+  
+  .apple-health-section .browse-button {
+    background-color: var(--apple-health-primary);
+  }
+  
+  .apple-health-section .browse-button:hover {
+    background-color: var(--apple-health-secondary);
+    box-shadow: 0 4px 10px rgba(255, 45, 85, 0.3);
+  }
+  
+  /* Metrics list */
+  .apple-health-metrics-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 15px 0;
+    position: relative;
+    min-height: 100px;
+  }
+  
+  .metric-card {
+    background: rgba(40, 40, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1 1 calc(33.33% - 12px);
+    min-width: 200px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+  
+  .metric-card:hover {
+    background: rgba(50, 50, 50, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 45, 85, 0.3);
+  }
+  
+  .metric-card.selected {
+    background: rgba(255, 45, 85, 0.15);
+    border-color: rgba(255, 45, 85, 0.5);
+    box-shadow: 0 4px 12px rgba(255, 45, 85, 0.2);
+  }
+  
+  .metric-card h5 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+  }
+  
+  .metric-card p {
+    margin: 0;
+    font-size: 12px;
+    color: #b3b3b3;
+  }
+  
+  /* Loading animations */
+  .loading-spinner-small {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 45, 85, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--apple-health-primary);
+    animation: spin 1s infinite ease-in-out;
+    display: inline-block;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
+  
+  .loading-message {
+    animation: pulse 1.5s infinite;
+    color: #b3b3b3;
+    margin-left: 5px;
+  }
+  
+  /* Date range slider styling */
+.date-range-slider-container {
+    padding: 20px 10px;
+    margin-bottom: 20px;
+  }
+  
+  /* Individual range sliders */
+  .date-range-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    border-radius: 2px;
+    margin: 10px 0;
+  }
+  
+  /* Thumb styling for WebKit (Chrome, Safari, newer Edge) */
+  .date-range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #FF2D55;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  /* Thumb styling for Firefox */
+  .date-range-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #FF2D55;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  /* Hover effects for thumbs */
+  .date-range-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255, 45, 85, 0.5);
+  }
+  
+  .date-range-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255, 45, 85, 0.5);
+  }
+  
+  /* Track styling for WebKit */
+  .date-range-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 0px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  
+  /* Track styling for Firefox */
+  .date-range-slider::-moz-range-track {
+    width: 100%;
+    height: 0px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  
+  /* Add labels for start and end sliders */
+  .date-range-slider-container label {
+    display: block;
+    color: #b3b3b3;
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+  
+  /* Date range labels styling */
+  .date-range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #b3b3b3;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .date-range-labels {
+      flex-direction: column;
+      gap: 5px;
+    }
+  }
+  
+  /* Error state */
+  .error-message {
+    color: #ff6b6b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background-color: rgba(255, 107, 107, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+  }
+  
+  .no-metrics-message {
+    padding: 20px;
+    text-align: center;
+    color: #b3b3b3;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+  }
+  
+  /* Progress bar */
+  .progress-bar-container {
+    width: 80%;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 10px auto;
+    overflow: hidden;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background-color: var(--apple-health-primary);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  
+  /* Override primary button for Apple Health */
+  #apple-health-visualize-button {
+    background-color: var(--apple-health-primary);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  #apple-health-visualize-button:hover:not(:disabled) {
+    background-color: var(--apple-health-secondary);
+    box-shadow: 0 4px 10px rgba(255, 45, 85, 0.3);
+  }
+  
+  #apple-health-visualize-button:disabled {
+    background-color: rgba(255, 45, 85, 0.5);
+  }
+  
+  /* Preview table styling for Apple Health */
+  #apple-health-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  
+  #apple-health-preview-table th {
+    text-align: left;
+    padding: 8px 12px;
+    background-color: rgba(255, 45, 85, 0.1);
+    color: #fff;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 45, 85, 0.3);
+  }
+  
+  #apple-health-preview-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e0e0e0;
+  }
+  
+  #apple-health-preview-table tr:nth-child(even) {
+    background-color: rgba(40, 40, 40, 0.3);
+  }
+  
+  #apple-health-preview-table tr:hover {
+    background-color: rgba(255, 45, 85, 0.05);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .metric-card {
+      flex: 1 1 100%;
+      min-width: 100%;
+    }
+    
+    .tab-navigation {
+      flex-wrap: wrap;
+    }
+    
+    .tab-button {
+      flex: 1 1 auto;
+      text-align: center;
+      padding: 8px 10px;
+    }
+    
+    .dual-slider-container {
+      height: 50px;
+    }
+    
+    .date-range-labels {
+      flex-direction: column;
+      gap: 5px;
+    }
+  }

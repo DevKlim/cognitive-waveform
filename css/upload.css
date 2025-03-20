@@ -180,11 +180,12 @@ h1, h2, h3, .logo-small span {
 }
 
 .file-info {
+    margin-top: 25px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: rgba(29, 185, 84, 0.1);
-  padding: 15px 20px;
+  padding: 15px 25px;
   border-radius: 8px;
   border: 1px solid rgba(29, 185, 84, 0.2);
 }

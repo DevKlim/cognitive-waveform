@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognify - Upload Dataset</title>
     <link rel="stylesheet" href="css/upload.css">
+    <link rel="stylesheet" href="css/apple-health-styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 15L45 35 25 40 37 52 32 72 50 62 68 72 63 52 75 40 55 35z' fill='%231db954'/></svg>">
 </head>
 <body>
@@ -38,7 +39,7 @@
             </div>
             <div class="instruction-content">
                 <h3>Upload Your Stress Dataset</h3>
-                <p>Upload a CSV file containing time-series data for stress-related measurements. Your file should include:</p>
+                <p>Upload a CSV file or Apple Health export containing time-series data for stress-related measurements. Your file should include:</p>
                 <ul>
                     <li>A timestamp column (time, date, or sequence)</li>
                     <li>At least one measurement column (heart rate, GSR, etc.)</li>
@@ -47,8 +48,14 @@
             </div>
         </div>
         
-        <!-- Upload form -->
-        <div class="upload-section">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="csv-upload">CSV Upload</button>
+            <button class="tab-button" data-tab="apple-health">Apple Health</button>
+        </div>
+        
+        <!-- CSV Upload Section -->
+        <div class="upload-section" id="csv-upload-section">
             <div class="upload-area" id="upload-area">
                 <input type="file" id="csv-file" accept=".csv" hidden>
                 <div class="upload-prompt">
@@ -78,7 +85,38 @@
             </div>
         </div>
         
-        <!-- Data preview and configuration -->
+        <!-- Apple Health Upload Section -->
+        <div class="upload-section apple-health-section hidden" id="apple-health-section">
+            <div class="upload-area" id="apple-health-upload-area">
+                <input type="file" id="apple-health-file" accept=".zip" hidden>
+                <div class="upload-prompt">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="#FF2D55" class="apple-health-icon">
+                        <path d="M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"/>
+                    </svg>
+                    <h3>Drag & Drop Your Apple Health Export.zip</h3>
+                    <p>or</p>
+                    <button id="apple-health-browse-button" class="browse-button">Browse Files</button>
+                </div>
+                <div id="apple-health-file-info" class="file-info hidden">
+                    <div class="file-preview">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="#FF2D55" class="apple-health-icon">
+                            <path d="M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"/>
+                        </svg>
+                        <div class="file-details">
+                            <span id="apple-health-file-name">No file selected</span>
+                            <span id="apple-health-file-size"></span>
+                        </div>
+                    </div>
+                    <button id="apple-health-remove-file" class="remove-file">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CSV Data configuration -->
         <div id="data-configuration" class="data-configuration hidden">
             <h3>Configure Your Dataset</h3>
             
@@ -159,6 +197,47 @@
                 <button id="cancel-button" class="secondary-button">Cancel</button>
             </div>
         </div>
+        
+        <!-- Apple Health configuration -->
+        <div id="apple-health-configuration" class="data-configuration hidden">
+            <h3>Configure Apple Health Data</h3>
+            
+            <div class="apple-health-metrics">
+                <h4>Available Metrics</h4>
+                <div id="apple-health-metrics-list" class="apple-health-metrics-list">
+                    <div class="loading-spinner-small"></div>
+                    <p class="loading-message">Processing data...</p>
+                </div>
+            </div>
+            
+            <div class="date-range-selection hidden" id="date-range-selection">
+                <h4>Select Date Range</h4>
+                <div class="date-range-slider-container">
+                    <div id="date-range-slider"></div>
+                    <div class="date-range-labels">
+                        <span id="start-date-label">Start: N/A</span>
+                        <span id="end-date-label">End: N/A</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-item">
+                <label for="apple-health-dataset-name">Dataset Name:</label>
+                <input type="text" id="apple-health-dataset-name" class="config-input" placeholder="e.g., My Apple Health Data">
+            </div>
+
+            <div class="preview-section hidden" id="apple-health-preview-section">
+                <h4>Preview</h4>
+                <div class="preview-table-container">
+                    <table id="apple-health-preview-table" class="preview-table"></table>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="apple-health-visualize-button" class="primary-button" disabled>Visualize Data</button>
+                <button id="apple-health-cancel-button" class="secondary-button">Cancel</button>
+            </div>
+        </div>
     </div>
     
     <!-- Error modal -->
@@ -186,12 +265,14 @@
     <!-- D3.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     
+    <!-- JSZip for processing Apple Health export.zip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
     <!-- PapaParse for CSV parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     
     <!-- Upload Page JavaScript -->
     <script src="js/upload.js"></script>
-    <script src="js/loading-manager.js"></script>
-    <script src="js/logo-redirect.js"></script>
+    <script src="js/apple-health-integration.js"></script>
 </body>
 </html>
