@@ -1713,3 +1713,138 @@ h1, h2, h3, h4, .logo-container span {
 .hidden {
   display: none !important;
 }
+
+.apple-health-section {
+  margin-top: 60px;
+  background-color: rgba(24, 24, 24, 0.8);
+  border-radius: 12px;
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.apple-health-section h3 {
+  color: #FF2D55; /* Apple Health pink color */
+  margin-bottom: 15px;
+  font-size: 24px;
+}
+
+.apple-export-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.export-step {
+  display: flex;
+  gap: 20px;
+}
+
+.export-step .step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: #FF2D55;
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.export-step .step-content h4 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #fff;
+}
+
+.apple-screenshots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.screenshot {
+  background-color: rgba(18, 18, 18, 0.8);
+  border-radius: 8px;
+  padding: 10px;
+  width: 150px;
+  text-align: center;
+}
+
+.screenshot img {
+  width: 100%;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.screenshot p {
+  font-size: 12px;
+  color: #b3b3b3;
+}
+
+.apple-upload-preview,
+.data-preview-example {
+  margin-top: 15px;
+  background-color: rgba(18, 18, 18, 0.8);
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+}
+
+.apple-upload-preview img,
+.data-preview-example img {
+  max-width: 100%;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metric-selection-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.metric-card-example {
+  background: rgba(40, 40, 40, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 15px;
+  min-width: 150px;
+}
+
+.metric-card-example.selected {
+  background: rgba(255, 45, 85, 0.2);
+  border-color: rgba(255, 45, 85, 0.5);
+}
+
+.metric-card-example h5 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+}
+
+.metric-card-example p {
+  margin: 0;
+  font-size: 12px;
+  color: #b3b3b3;
+}
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+  .export-step {
+    flex-direction: column;
+  }
+  
+  .export-step .step-number {
+    margin-bottom: 10px;
+  }
+  
+  .apple-screenshots {
+    justify-content: center;
+  }
+}
