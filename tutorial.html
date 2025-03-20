@@ -426,18 +426,7 @@
                                 <canvas id="waveform-canvas" width="600" height="200"></canvas>
                                 <div class="canvas-instructions">Click and drag to draw</div>
                             </div>
-                            
-                            <div class="editor-controls">
-                                <button id="clear-canvas" class="demo-btn">Clear</button>
-                                <button id="smooth-wave" class="demo-btn">Smooth</button>
-                                <div class="spacer"></div>
-                                <button id="play-custom-wave" class="demo-btn primary">
-                                    <svg viewBox="0 0 24 24" width="16" height="16">
-                                        <path d="M8 5v14l11-7z" fill="currentColor"/>
-                                    </svg>
-                                    Play Your Wave
-                                </button>
-                            </div>
+                        
                         </div>
                         
                         <div class="custom-wave-tips">
@@ -652,6 +641,18 @@
             </div>
         </section>
     </main>
+
+    <!-- Custom confirmation dialog -->
+    <div id="custom-confirm-dialog" class="custom-dialog hidden">
+    <div class="dialog-content">
+      <h3>Redirect Confirmation</h3>
+      <p>Are you sure you want to go to the upload page?</p>
+      <div class="dialog-buttons">
+        <button id="dialog-cancel" class="dialog-btn secondary">Cancel</button>
+        <button id="dialog-confirm" class="dialog-btn primary">Go to Upload</button>
+      </div>
+    </div>
+  </div>
 
     <!-- Scripts -->
     <script src="js/tutorial.js"></script>

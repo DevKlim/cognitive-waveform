@@ -672,7 +672,7 @@ function togglePlayerPlayback() {
       startPlayerPlayback();
     }
   }
-  /**
+ /**
  * Start player playback
  */
 function startPlayerPlayback() {
@@ -681,14 +681,7 @@ function startPlayerPlayback() {
     // Initialize audio context if needed
     initAudioContext();
     
-    // Resume context if suspended (needed for Chrome's autoplay policy)
-    if (tutorialState.audioContext && tutorialState.audioContext.state === 'suspended') {
-      tutorialState.audioContext.resume().then(() => {
-        console.log('AudioContext resumed successfully');
-      });
-    }
-    
-    // Update UI
+    // Update UI first
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
     if (playIcon && pauseIcon) {
@@ -699,7 +692,7 @@ function startPlayerPlayback() {
     // Update state
     tutorialState.playerIsPlaying = true;
     
-    // Start from current position
+    // Current position
     const currentPosition = tutorialState.playerPosition || 0;
     
     // Reset if at end
@@ -707,32 +700,36 @@ function startPlayerPlayback() {
       updatePlayerPosition(0);
     }
     
-    // Start audio with a slight delay to ensure audioContext is ready
-    setTimeout(() => {
-      // Start audio
-      updatePlayerAudio(tutorialState.playerPosition || 0);
-      
-      // Start playback interval
-      tutorialState.playerInterval = setInterval(() => {
-        // Get current position
-        let position = tutorialState.playerPosition || 0;
+    // Resume context if suspended (needed for Chrome's autoplay policy)
+    if (tutorialState.audioContext) {
+      tutorialState.audioContext.resume().then(() => {
+        console.log('AudioContext resumed successfully for player');
         
-        // Apply speed
-        position += 0.5 * (tutorialState.playbackSpeed || 1.0);
+        // Start audio
+        updatePlayerAudio(tutorialState.playerPosition || 0);
         
-        if (position >= 100) {
-          stopPlayerPlayback();
-          return;
-        }
-        
-        // Update position
-        updatePlayerPosition(position);
-        
-        // Update audio
-        updatePlayerAudio(position);
-        
-      }, 100); // Update 10 times per second
-    }, 200);
+        // Start playback interval
+        tutorialState.playerInterval = setInterval(() => {
+          // Get current position
+          let position = tutorialState.playerPosition || 0;
+          
+          // Apply speed
+          position += 0.5 * (tutorialState.playbackSpeed || 1.0);
+          
+          if (position >= 100) {
+            stopPlayerPlayback();
+            return;
+          }
+          
+          // Update position
+          updatePlayerPosition(position);
+          
+          // Update audio
+          updatePlayerAudio(position);
+          
+        }, 100); // Update 10 times per second
+      });
+    }
   }
   
   
@@ -841,22 +838,36 @@ function startPlayerPlayback() {
   }
   
   /**
-   * Start playing a simple oscillator
-   * @param {string} type - Oscillator type (sine, square, etc.)
-   * @param {number} frequency - Initial frequency in Hz
-   */
-  function playAudio(type, frequency) {
+ * Start playing a simple oscillator
+ * @param {string} type - Oscillator type (sine, square, etc.)
+ * @param {number} frequency - Initial frequency in Hz
+ */
+function playAudio(type, frequency) {
     // Initialize audio context if needed
     initAudioContext();
     if (!tutorialState.audioContext) return;
     
     // Resume context if suspended (needed for Chrome's autoplay policy)
     if (tutorialState.audioContext.state === 'suspended') {
-      tutorialState.audioContext.resume();
+      tutorialState.audioContext.resume().then(() => {
+        console.log('AudioContext resumed successfully');
+        continuePlayAudio(type, frequency);
+      });
+    } else {
+      continuePlayAudio(type, frequency);
     }
-    
+  }
+  
+  function continuePlayAudio(type, frequency) {
     // Stop any currently playing audio
-    stopAudio();
+    if (tutorialState.isPlaying) {
+      try {
+        tutorialState.oscillator.stop();
+        tutorialState.oscillator.disconnect();
+      } catch (e) {
+        console.warn('Error stopping previous oscillator:', e);
+      }
+    }
     
     try {
       // Create new oscillator
@@ -951,41 +962,51 @@ function startPlayerPlayback() {
     }
     
     // Set up play stress sound button
-    const playStressButton = document.getElementById('play-stress-sound');
-    if (playStressButton) {
-      playStressButton.addEventListener('click', function() {
-        if (tutorialState.isPlaying) {
-          stopAudio();
-          this.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M8 5v14l11-7z" fill="currentColor"/>
-            </svg>
-            Hear It
-          `;
-        } else {
-          // Get stress level and convert to frequency
-          const stressLevel = parseInt(document.getElementById('stress-slider').value);
-          const heartRate = 60 + (stressLevel * 0.6);
-          const frequency = 220 + ((heartRate - 60) / 120) * 440;
-          
-          // Choose waveform based on stress
-          let waveType = 'sine';
-          if (stressLevel > 70) {
-            waveType = 'sawtooth';
-          } else if (stressLevel > 30) {
-            waveType = 'triangle';
-          }
-          
+const playStressButton = document.getElementById('play-stress-sound');
+if (playStressButton) {
+  playStressButton.addEventListener('click', function() {
+    if (tutorialState.isPlaying) {
+      stopAudio();
+      tutorialState.stressAudioPlaying = false;
+      this.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <path d="M8 5v14l11-7z" fill="currentColor"/>
+        </svg>
+        Hear It
+      `;
+    } else {
+      // Get stress level and convert to frequency
+      const stressLevel = parseInt(document.getElementById('stress-slider').value);
+      const heartRate = 60 + (stressLevel * 0.6);
+      const frequency = 220 + ((heartRate - 60) / 120) * 440;
+      
+      // Choose waveform based on stress
+      let waveType = 'sine';
+      if (stressLevel > 70) {
+        waveType = 'sawtooth';
+      } else if (stressLevel > 30) {
+        waveType = 'triangle';
+      }
+      
+      // Initialize audio context
+      initAudioContext();
+      
+      // Resume context if suspended
+      if (tutorialState.audioContext) {
+        tutorialState.audioContext.resume().then(() => {
           playAudio(waveType, frequency);
+          tutorialState.stressAudioPlaying = true;
           this.innerHTML = `
             <svg viewBox="0 0 24 24" width="16" height="16">
               <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
             </svg>
             Stop
           `;
-        }
-      });
+        });
+      }
     }
+  });
+}
     
     // Also set up visual/audio demo
     initVisualAudioDemo();
@@ -1107,54 +1128,51 @@ function startPlayerPlayback() {
     playButton.removeEventListener('click', handlePlayClick);
     
     // Define the click handler
-    function handlePlayClick() {
-      console.log('Play button clicked, current state:', demoIsPlaying ? 'playing' : 'stopped');
+    // Define the click handler
+function handlePlayClick() {
+    console.log('Play button clicked, current state:', demoIsPlaying ? 'playing' : 'stopped');
+    
+    if (demoIsPlaying) {
+      // Stop playback
+      if (demoInterval) {
+        clearInterval(demoInterval);
+        demoInterval = null;
+      }
+      stopAudio();
+      demoIsPlaying = false;
       
-      if (demoIsPlaying) {
-        // Stop playback
-        if (demoInterval) {
-          clearInterval(demoInterval);
-          demoInterval = null;
-        }
-        stopAudio();
-        demoIsPlaying = false;
-        
-        // Update button UI
-        playButton.innerHTML = `
-          <svg viewBox="0 0 24 24" width="24" height="24">
-            <path d="M8 5v14l11-7z" fill="currentColor"/>
-          </svg>
-          Play
-        `;
-      } else {
-        // Start playback
-        demoIsPlaying = true;
-        
-        // Update button UI
-        playButton.innerHTML = `
-          <svg viewBox="0 0 24 24" width="24" height="24">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
-          </svg>
-          Stop
-        `;
-        
-        // Reset if at end
-        if (demoPosition >= 100) {
-          demoPosition = 0;
-        }
-        
-        // Initialize audio context (this will handle autoplay policy issues)
-        initAudioContext();
-        
-        // Resume context if suspended (needed for Chrome's autoplay policy)
-        if (tutorialState.audioContext && tutorialState.audioContext.state === 'suspended') {
-          tutorialState.audioContext.resume().then(() => {
-            console.log('AudioContext resumed successfully');
-          });
-        }
-        
-        // Wait a moment for the context to resume
-        setTimeout(() => {
+      // Update button UI
+      playButton.innerHTML = `
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path d="M8 5v14l11-7z" fill="currentColor"/>
+        </svg>
+        Play
+      `;
+    } else {
+      // Start playback
+      demoIsPlaying = true;
+      
+      // Update button UI
+      playButton.innerHTML = `
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+        </svg>
+        Stop
+      `;
+      
+      // Reset if at end
+      if (demoPosition >= 100) {
+        demoPosition = 0;
+      }
+      
+      // Initialize audio context
+      initAudioContext();
+      
+      // Resume context if suspended (needed for Chrome's autoplay policy)
+      if (tutorialState.audioContext) {
+        tutorialState.audioContext.resume().then(() => {
+          console.log('AudioContext resumed successfully');
+          
           // Get initial value and frequency
           const initialValue = getDataValueAtPosition(sampleData, demoPosition);
           const initialFreq = mapValueToFrequency(initialValue);
@@ -1197,9 +1215,10 @@ function startPlayerPlayback() {
             updateAudioDemoPosition(sampleData, demoPosition);
             
           }, 100); // Update every 100ms
-        }, 200);
+        });
       }
     }
+  }
     
     // Add the click handler
     playButton.addEventListener('click', handlePlayClick);
@@ -1621,7 +1640,7 @@ function startPlayerPlayback() {
 }
 
 /**
- * Update player audio based on position - Adding more logging
+ * Update player audio based on position
  */
 function updatePlayerAudio(position) {
     console.log("Updating player audio at position:", position);
@@ -1653,7 +1672,14 @@ function updatePlayerAudio(position) {
     // Start or update audio
     if (!tutorialState.isPlaying) {
       console.log("Starting new audio");
-      playAudio(waveType, frequency);
+      initAudioContext();
+      if (tutorialState.audioContext && tutorialState.audioContext.state === 'suspended') {
+        tutorialState.audioContext.resume().then(() => {
+          playAudio(waveType, frequency);
+        });
+      } else {
+        playAudio(waveType, frequency);
+      }
     } else {
       console.log("Updating frequency of existing audio");
       updateFrequency(frequency);
@@ -1745,19 +1771,70 @@ function updatePlayerAudio(position) {
     });
   }
   
-  /**
-   * Initialize step 5
-   */
-  function initStep5() {
+ /**
+ * Initialize step 5
+ */
+function initStep5() {
     console.log('Initializing step 5');
     
     // Set up browse button
     const browseButton = document.getElementById('browse-files');
+    const customDialog = document.getElementById('custom-confirm-dialog');
+    const confirmBtn = document.getElementById('dialog-confirm');
+    const cancelBtn = document.getElementById('dialog-cancel');
+    
     if (browseButton) {
       browseButton.addEventListener('click', function() {
-        // In a real implementation, this would open a file dialog
-        // For the tutorial, we just simulate the experience
-        console.log('Browse button clicked');
+        // Show custom confirmation dialog
+        if (customDialog) {
+          customDialog.classList.remove('hidden');
+          // Use setTimeout to ensure the transition happens after display change
+          setTimeout(() => {
+            customDialog.classList.add('visible');
+          }, 10);
+        }
+      });
+    }
+    
+    // Set up dialog buttons
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function() {
+        // Hide dialog with animation
+        if (customDialog) {
+          customDialog.classList.remove('visible');
+          // Wait for animation to complete before hiding
+          setTimeout(() => {
+            customDialog.classList.add('hidden');
+            // Redirect to upload page
+            window.location.href = 'upload.html';
+          }, 300);
+        }
+      });
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function() {
+        // Hide dialog with animation
+        if (customDialog) {
+          customDialog.classList.remove('visible');
+          // Wait for animation to complete before hiding
+          setTimeout(() => {
+            customDialog.classList.add('hidden');
+          }, 300);
+        }
+      });
+    }
+    
+    // Allow clicking outside dialog to cancel
+    if (customDialog) {
+      customDialog.addEventListener('click', function(e) {
+        // Only close if clicking the background (not the dialog content)
+        if (e.target === customDialog) {
+          customDialog.classList.remove('visible');
+          setTimeout(() => {
+            customDialog.classList.add('hidden');
+          }, 300);
+        }
       });
     }
     

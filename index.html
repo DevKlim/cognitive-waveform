@@ -3,43 +3,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognify - Cognitive Waveform Visualizer</title>
-    <link rel="stylesheet" href="css/albums.css">
+    <title>Cognify - Visualize Cognitive Load</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 15L45 35 25 40 37 52 32 72 50 62 68 72 63 52 75 40 55 35z' fill='%231db954'/></svg>">
+    <style>
+        /* Import base fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #121212;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-45deg, #121212, #181818, #121212, #0a0a0a);
+            background-size: 400% 400%;
+            animation: gradient-bg 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        @keyframes gradient-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .loading-content {
+            text-align: center;
+            max-width: 600px;
+            padding: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .app-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 72px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #1db954, #4a90e2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+            margin: 20px 0;
+            position: relative;
+            animation: title-glow 3s infinite alternate;
+        }
+
+        @keyframes title-glow {
+            0% { text-shadow: 0 0 20px rgba(29, 185, 84, 0.3); }
+            100% { text-shadow: 0 0 30px rgba(29, 185, 84, 0.6); }
+        }
+
+        .app-icon {
+            margin-bottom: 20px;
+            animation: pulse 3s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(29, 185, 84, 0.3)); }
+            100% { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(29, 185, 84, 0.6)); }
+        }
+
+        .loading-bar-container {
+            width: 300px;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 30px auto;
+            position: relative;
+        }
+
+        .loading-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #1db954, #4a90e2);
+            border-radius: 3px;
+            animation: loading-progress 3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation-fill-mode: forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.3), 
+                transparent
+            );
+            animation: loading-shimmer 1.5s infinite;
+        }
+
+        @keyframes loading-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes loading-progress {
+            0% { width: 0%; }
+            20% { width: 20%; }
+            40% { width: 40%; }
+            60% { width: 60%; }
+            80% { width: 85%; }
+            100% { width: 100%; }
+        }
+
+        .loading-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            margin-top: 30px;
+            line-height: 1.7;
+            max-width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+            opacity: 0;
+            animation: fade-in 0.5s ease-in 0.5s forwards;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .enter-button {
+            display: inline-block;
+            background: linear-gradient(90deg, #1db954, #1ed760);
+            color: #000;
+            font-weight: 600;
+            padding: 12px 36px;
+            border-radius: 30px;
+            text-decoration: none;
+            margin-top: 40px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+            opacity: 0;
+            animation: fade-in 0.5s ease-in 2.8s forwards;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .enter-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(29, 185, 84, 0.4);
+        }
+
+        .particles-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .background-waves {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            overflow: hidden;
+        }
+
+        .tagline {
+            margin-top: 10px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 300;
+            letter-spacing: 1px;
+            opacity: 0;
+            animation: fade-in 0.5s ease-in 1.5s forwards;
+        }
+
+        @media (max-width: 768px) {
+            .app-title {
+                font-size: 48px;
+            }
+            
+            .loading-bar-container {
+                width: 80%;
+            }
+            
+            .loading-text {
+                font-size: 14px;
+                max-width: 90%;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- LOADING SCREEN -->
-    <div id="loading-screen" class="loading-screen">
+    <div class="loading-screen">
+        <!-- Particles background will be added by D3 -->
+        <div id="particles-container" class="particles-container"></div>
+        
+        <!-- Background waves will be added by D3 -->
+        <div id="background-waves" class="background-waves"></div>
+        
         <div class="loading-content">
-            <div class="logo-container">
-                <svg width="120" height="120" viewBox="0 0 24 24">
+            <div class="app-icon">
+                <svg width="80" height="80" viewBox="0 0 24 24">
                     <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z" fill="#1db954" />
                 </svg>
-                <h1 class="app-title">Cognify</h1>
             </div>
+            
+            <h1 class="app-title">Cognify</h1>
+            <div class="tagline">See your stress. Understand your rhythm.
+                Stress is invisible—until now...</div>
+            
             <div class="loading-bar-container">
                 <div class="loading-bar"></div>
             </div>
-            <p class="loading-text">See your stress. Understand your rhythm.
-                Stress is invisible—until now...</p>
+            
+            <p class="loading-text">
+                Cognify helps you analyze and understand cognitive load data through interactive 
+                visualizations and sonification. Explore patterns in heart rate, GSR, and other 
+                biometric data to gain insights into stress and cognitive engagement.
+            </p>
+            
+            <a href="albums.html" class="enter-button">Enter Cognify</a>
         </div>
     </div>
+
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+    <script src="js/logo-redirect.js"></script>
+    <script src="js/loading-manager.js"></script>
     
     <script>
-        // Simple redirect to albums.html after loading animation
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("Loading sequence started");
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create particles background
+            createParticles();
             
-            // Animation duration for loading bar is set to 3s in CSS
-            // Add slight delay to ensure animation completes
-            setTimeout(() => {
-                console.log("Loading complete, redirecting to albums page");
-                window.location.href = 'albums.html';
-            }, 3500);
+            // Create animated background waves
+            createBackgroundWaves();
+            
+            // Add brainwave animation
+            createBrainwaveAnimation();
+            
+            // Preload necessary assets for application
+            preloadAssets();
+            
+            // Ensure Enter button works
+            document.querySelector('.enter-button').addEventListener('click', function(e) {
+                e.preventDefault();
+                // Simple transition effect before navigating
+                document.querySelector('.loading-content').style.opacity = 0;
+                setTimeout(function() {
+                    window.location.href = e.target.getAttribute('href');
+                }, 500);
+            });
         });
+        
+        // Create animated particles using D3
+        function createParticles() {
+            const container = d3.select('#particles-container');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            // Create SVG
+            const svg = container.append('svg')
+                .attr('width', width)
+                .attr('height', height);
+            
+            // Generate random particles
+            const particleCount = Math.min(Math.floor(width * height / 10000), 100);
+            const particles = Array.from({ length: particleCount }, () => ({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 3 + 1,
+                speedX: (Math.random() - 0.5) * 0.7,
+                speedY: (Math.random() - 0.5) * 0.7,
+                opacity: Math.random() * 0.5 + 0.1
+            }));
+            
+            // Add particles to SVG
+            const circles = svg.selectAll('circle')
+                .data(particles)
+                .enter()
+                .append('circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', d => d.size)
+                .attr('fill', '#1db954')
+                .attr('opacity', d => d.opacity);
+            
+            // Animate particles
+            function animateParticles() {
+                particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    
+                    // Wrap around edges
+                    if (p.x < 0) p.x = width;
+                    if (p.x > width) p.x = 0;
+                    if (p.y < 0) p.y = height;
+                    if (p.y > height) p.y = 0;
+                });
+                
+                circles
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+                
+                requestAnimationFrame(animateParticles);
+            }
+            
+            animateParticles();
+        }
+        
+        // Create animated background waves using D3
+        function createBackgroundWaves() {
+            const container = d3.select('#background-waves');
+            const width = window.innerWidth;
+            const height = 120;
+            
+            // Create SVG
+            const svg = container.append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('preserveAspectRatio', 'none');
+            
+            // Wave parameters
+            const waveColors = ['rgba(29, 185, 84, 0.15)', 'rgba(29, 185, 84, 0.1)', 'rgba(74, 144, 226, 0.1)'];
+            const numWaves = waveColors.length;
+            
+            // Create waves
+            for (let i = 0; i < numWaves; i++) {
+                createWave(svg, i, waveColors[i], width, height);
+            }
+        }
+        
+        function createWave(svg, index, color, width, height) {
+            // Create wave path generator
+            const points = 10;
+            const segment = width / points;
+            
+            function generateWavePath(offset) {
+                let pathData = `M0,${height} `;
+                
+                // Create control points
+                for (let i = 0; i <= points; i++) {
+                    const x = i * segment;
+                    const y = Math.sin((i + offset) / 2) * 15 + (index * 10) + 40;
+                    
+                    pathData += `${i === 0 ? 'C' : ' '} ${x-segment/2},${y-5} ${x-segment/4},${y} ${x},${y}`;
+                }
+                
+                // Close the path
+                pathData += ` L${width},${height} L0,${height} Z`;
+                return pathData;
+            }
+            
+            // Add path to SVG
+            const wavePath = svg.append('path')
+                .attr('fill', color)
+                .attr('d', generateWavePath(0));
+            
+            // Animate the wave
+            let offset = index * 3;
+            
+            function animateWave() {
+                offset += 0.1;
+                wavePath.attr('d', generateWavePath(offset));
+                requestAnimationFrame(animateWave);
+            }
+            
+            animateWave();
+        }
+        document.head.appendChild(preloadLink);
+
     </script>
 </body>
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<!-- Modern UI Enhancements for Loading Page -->
-<script src="js/album-loading-enhancements.js"></script>
 </html>
