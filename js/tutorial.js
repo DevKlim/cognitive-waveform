@@ -1,10 +1,10 @@
 /**
-   * enhanced-tutorial.js
-   * Interactive tutorial functionality for Cognify
-   */
-  
-  // Store global state for audio and visualizations
-  const tutorialState = {
+ * tutorial.js
+ * Interactive tutorial functionality for Cognify
+ */
+
+// Store global state for audio and visualizations
+const tutorialState = {
     // Audio context and nodes
     audioContext: null,
     gainNode: null,
@@ -52,968 +52,14 @@
         window.location.href = 'albums.html';
       });
     }
-  });
-  
-  /**
-   * Initialize scrollama for step-based scrolling
-   */
-  function initScrollama() {
-    const scroller = scrollama();
+});
     
-    // Set up the steps
-    scroller
-      .setup({
-        step: '.tutorial-step',
-        offset: 0.5,
-        debug: false
-      })
-      .onStepEnter(response => {
-        // Get the step number
-        const stepNumber = parseInt(response.element.dataset.step);
-        
-        // Update progress bar
-        updateProgress(stepNumber);
-        
-        // Hide scroll prompt after first step
-        if (stepNumber > 1) {
-          const scrollPrompt = document.getElementById('scroll-prompt');
-          if (scrollPrompt) scrollPrompt.classList.add('hidden');
-        }
-        
-        // Mark step as active
-        response.element.classList.add('active');
-        
-        // Initialize specific step content
-        switch(stepNumber) {
-          case 1: initStep1(); break;
-          case 2: initStep2(); break;
-          case 3: initStep3(); break;
-          case 4: initStep4(); break;
-          case 5: initStep5(); break;
-        }
-      })
-      .onStepExit(response => {
-        // Clean up any active audio/animations when leaving a step
-        const stepNumber = parseInt(response.element.dataset.step);
-        
-        // Stop any audio playing in the section
-        if (tutorialState.isPlaying) {
-          stopAudio();
-        }
-        
-        // Clean up specific step resources
-        switch(stepNumber) {
-          case 1: cleanupStep1(); break;
-          case 2: cleanupStep2(); break;
-          case 3: cleanupStep3(); break;
-          case 4: cleanupStep4(); break;
-          case 5: cleanupStep5(); break;
-        }
-      });
-      
-    // After initialization, update to reflect current position
-    // This helps if the page is refreshed in the middle of the tutorial
-    scroller.resize();
-  }
-  
-  /**
-   * Update progress bar and step indicators
-   * @param {number} step - Current step number (1-based)
-   */
-  function updateProgress(step) {
-    // Update progress bar
-    const progressBar = document.getElementById('progress-bar');
-    if (progressBar) {
-      // Calculate percentage (5 steps total)
-      const progress = ((step - 1) / 4) * 100;
-      progressBar.style.width = `${progress}%`;
-    }
-    
-    // Update step indicators
-    const stepIndicators = document.querySelectorAll('.progress-step');
-    stepIndicators.forEach(indicator => {
-      const indicatorStep = parseInt(indicator.dataset.step);
-      indicator.classList.toggle('active', indicatorStep <= step);
-    });
-  }
-  
-/**
- * Initialize audio context for all audio functionality
- */
-function initAudioContext() {
-  if (tutorialState.audioContext) return;
-  
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    tutorialState.audioContext = new AudioContext();
-    
-    // Create main gain node
-    tutorialState.gainNode = tutorialState.audioContext.createGain();
-    tutorialState.gainNode.gain.value = 0.2; // 20% volume
-    tutorialState.gainNode.connect(tutorialState.audioContext.destination);
-    
-    console.log('Audio context initialized');
-  } catch (e) {
-    console.error('Failed to initialize audio context:', e);
-  }
-}
-
-/**
- * Start playing a simple oscillator
- * @param {string} type - Oscillator type (sine, square, etc.)
- * @param {number} frequency - Initial frequency in Hz
- */
-function playAudio(type, frequency) {
-  // Initialize audio context if needed
-  initAudioContext();
-  if (!tutorialState.audioContext) return;
-  
-  // Resume context if suspended (needed for Chrome's autoplay policy)
-  if (tutorialState.audioContext.state === 'suspended') {
-    tutorialState.audioContext.resume();
-  }
-  
-  // Stop any currently playing audio
-  stopAudio();
-  
-  try {
-    // Create new oscillator
-    tutorialState.oscillator = tutorialState.audioContext.createOscillator();
-    tutorialState.oscillator.type = type || 'sine';
-    tutorialState.oscillator.frequency.value = frequency || 440;
-    
-    // Connect and start
-    tutorialState.oscillator.connect(tutorialState.gainNode);
-    tutorialState.oscillator.start();
-    tutorialState.isPlaying = true;
-    tutorialState.currentWaveType = type;
-    
-    console.log(`Started ${type} wave at ${frequency}Hz`);
-  } catch (e) {
-    console.error('Error starting audio:', e);
-  }
-}
-
-/**
- * Stop currently playing audio
- */
-function stopAudio() {
-  if (!tutorialState.oscillator || !tutorialState.isPlaying) return;
-  
-  try {
-    tutorialState.oscillator.stop();
-    tutorialState.oscillator.disconnect();
-    tutorialState.oscillator = null;
-    tutorialState.isPlaying = false;
-    
-    console.log('Audio stopped');
-  } catch (e) {
-    console.error('Error stopping audio:', e);
-  }
-}
-
-/**
- * Update the frequency of currently playing audio
- * @param {number} frequency - New frequency in Hz
- */
-function updateFrequency(frequency) {
-  if (!tutorialState.oscillator || !tutorialState.isPlaying) return;
-  
-  try {
-    // Use exponential ramp for smoother transition
-    const now = tutorialState.audioContext.currentTime;
-    tutorialState.oscillator.frequency.exponentialRampToValueAtTime(
-      Math.max(frequency, 1), // Ensure value is positive for exponentialRamp
-      now + 0.1
-    );
-  } catch (e) {
-    console.error('Error updating frequency:', e);
-  }
-}
-
-/**
- * Update volume level
- * @param {number} level - Volume level from 0-1
- */
-function updateVolume(level) {
-  if (!tutorialState.gainNode) return;
-  
-  try {
-    // Clamp value between 0-1
-    const safeLevel = Math.max(0, Math.min(1, level));
-    
-    // Smooth transition
-    const now = tutorialState.audioContext.currentTime;
-    tutorialState.gainNode.gain.linearRampToValueAtTime(
-      safeLevel,
-      now + 0.1
-    );
-  } catch (e) {
-    console.error('Error updating volume:', e);
-  }
-}
-  
-  /**
-   * Update the frequency of currently playing audio
-   * @param {number} frequency - New frequency in Hz
-   */
-  function updateFrequency(frequency) {
-    if (!tutorialState.oscillator || !tutorialState.isPlaying) return;
-    
-    try {
-      // Use exponential ramp for smoother transition
-      const now = tutorialState.audioContext.currentTime;
-      tutorialState.oscillator.frequency.exponentialRampToValueAtTime(
-        frequency,
-        now + 0.1
-      );
-    } catch (e) {
-      console.error('Error updating frequency:', e);
-    }
-  }
-
-  
-  // =================================================================
-  // STEP 1: Why Visualize Data with Sound?
-  // =================================================================
-  function initStep1() {
-    console.log('Initializing step 1');
-    
-    // Set up stress level slider
-    initStressSlider();
-    
-    // Set up visual/audio demo
-    initVisualAudioDemo();
-  }
-
-
-  function initStep1() {
-    console.log('Initializing step 1');
-    
-    // Set up stress level slider
-    const stressSlider = document.getElementById('stress-slider');
-    if (stressSlider) {
-      stressSlider.addEventListener('input', updateStressVisualization);
-      // Initialize with default value
-      stressSlider.value = 20;
-      updateStressVisualization();
-    }
-    
-    // Set up play stress sound button
-    const playStressButton = document.getElementById('play-stress-sound');
-    if (playStressButton) {
-      playStressButton.addEventListener('click', function() {
-        if (tutorialState.isPlaying) {
-          stopAudio();
-          this.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M8 5v14l11-7z" fill="currentColor"/>
-            </svg>
-            Hear It
-          `;
-        } else {
-          // Get stress level and convert to frequency
-          const stressLevel = parseInt(document.getElementById('stress-slider').value);
-          const heartRate = 60 + (stressLevel * 0.6);
-          const frequency = 220 + ((heartRate - 60) / 120) * 440;
-          
-          // Choose waveform based on stress
-          let waveType = 'sine';
-          if (stressLevel > 70) {
-            waveType = 'sawtooth';
-          } else if (stressLevel > 30) {
-            waveType = 'triangle';
-          }
-          
-          playAudio(waveType, frequency);
-          this.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
-            </svg>
-            Stop
-          `;
-        }
-      });
-    }
-    
-    // Also set up visual/audio demo
-    initVisualAudioDemo();
-  }
-  
-  function updateStressVisualization() {
-    const slider = document.getElementById('stress-slider');
-    if (!slider) return;
-    
-    const stressLevel = parseInt(slider.value);
-    
-    // Update heart rate based on stress (60-120 BPM range)
-    const heartRate = 60 + (stressLevel * 0.6);
-    const bpmValue = document.getElementById('bpm-value');
-    if (bpmValue) {
-      bpmValue.textContent = `${Math.round(heartRate)} BPM`;
-    }
-    
-    // Update waveform visualization
-    updateLiveWaveform(stressLevel);
-    
-    // Update heart animation speed
-    const heartIcon = document.getElementById('heart-animation');
-    if (heartIcon) {
-      // Adjust animation speed based on heart rate
-      const animationDuration = 60 / heartRate; // seconds per beat
-      heartIcon.style.animationDuration = `${animationDuration}s`;
-    }
-    
-    // If sound is currently playing, update its frequency
-    if (tutorialState.isPlaying && tutorialState.oscillator) {
-      const frequency = 220 + ((heartRate - 60) / 120) * 440;
-      updateFrequency(frequency);
-    }
-  }
-  
-  /**
-   * Update the live waveform visualization based on stress level
-   */
-  function updateLiveWaveform(stressLevel) {
-    const waveform = document.getElementById('live-waveform');
-    if (!waveform) return;
-    
-    // Clear existing bars
-    waveform.innerHTML = '';
-    
-    // Create new bars based on stress level
-    const barCount = 20;
-    
-    for (let i = 0; i < barCount; i++) {
-      const bar = document.createElement('div');
-      bar.className = 'waveform-bar';
-      
-      // Calculate height based on stress level and position
-      let height;
-      
-      if (stressLevel < 30) {
-        // Low stress - smooth, regular pattern
-        height = 10 + Math.sin(i * 0.5) * 10;
-      } else if (stressLevel < 70) {
-        // Medium stress - more variation
-        height = 15 + Math.sin(i * 0.8) * 15 + (Math.random() * 5);
-      } else {
-        // High stress - jagged, irregular pattern
-        height = 20 + Math.sin(i * 1.2) * 20 + (Math.random() * 15);
-      }
-      
-      bar.style.height = `${height}px`;
-      
-      // Add varying animation delay for wave effect
-      bar.style.animationDelay = `${i * 0.05}s`;
-      
-      // Color based on stress
-      const hue = Math.max(120, 360 - stressLevel * 2.4); // Green to red
-      bar.style.backgroundColor = `hsl(${hue}, 80%, 50%)`;
-      
-      waveform.appendChild(bar);
-    }
-  }
-
-  /**
- * Update audio and visualization for the audio demo
- */
-function updateAudioDemoVisualization(data, position) {
-    // Update audio frequency based on data value
-    const dataValue = getDataValueAtPosition(data, position);
-    const frequency = mapValueToFrequency(dataValue);
-    
-    if (tutorialState.isPlaying) {
-      updateFrequency(frequency);
-    }
-    
-    // Update position line in chart
-    const chart = d3.select('#audiovisual-chart svg');
-    if (!chart.empty()) {
-      const xScale = d3.scaleLinear()
-        .domain([0, data.length - 1])
-        .range([40, chart.attr('width') - 20]);
-      
-      const index = Math.floor((position / 100) * (data.length - 1));
-      const x = xScale(index);
-      
-      // Update position line
-      const positionLine = chart.select('#position-line');
-      if (!positionLine.empty()) {
-        positionLine.attr('x1', x).attr('x2', x);
-      }
-      
-      // Update highlight point
-      const highlightPoint = chart.select('#highlight-point');
-      if (!highlightPoint.empty()) {
-        const yScale = d3.scaleLinear()
-          .domain([d3.min(data, d => d.y) * 0.9, d3.max(data, d => d.y) * 1.1])
-          .range([chart.attr('height') - 30, 20]);
-        
-        highlightPoint
-          .attr('cx', x)
-          .attr('cy', yScale(data[index].y))
-          .attr('opacity', 1);
-      }
-    }
-  }
-  
- /**
- * Initialize the visual/audio demo in section 1
- */
-function initVisualAudioDemo() {
-    console.log('Initializing visual/audio demo');
-    
-    // Set up the SVG for the audio-visual demo
-    const visualChart = document.getElementById('visual-only-chart');
-    const audioVisualChart = document.getElementById('audiovisual-chart');
-    
-    if (!visualChart || !audioVisualChart) {
-      console.warn('Charts not found in DOM');
-      return;
-    }
-    
-    // Create a simple dataset with a hidden pattern
-    const sampleData = generateSampleDataWithPattern();
-    
-    // Create a simple line chart for both visualizations
-    createSimpleLineChart(visualChart, sampleData, false);
-    createSimpleLineChart(audioVisualChart, sampleData, true);
-    
-    // Set up play button for audio demo
-    const playButton = document.getElementById('play-audio-demo');
-    const timelineProgress = document.getElementById('audio-timeline-progress');
-    const timelineHandle = document.getElementById('audio-timeline-handle');
-    
-    if (!playButton) {
-      console.warn('Play button not found in DOM');
-      return;
-    }
-    
-    // Explicitly handle click events rather than relying on existing handlers
-    let demoIsPlaying = false;
-    let demoInterval = null;
-    let demoPosition = 0;
-    
-    // Remove any existing click handlers to avoid duplicates
-    playButton.removeEventListener('click', handlePlayClick);
-    
-    // Define the click handler
-    function handlePlayClick() {
-      console.log('Play button clicked, current state:', demoIsPlaying ? 'playing' : 'stopped');
-      
-      if (demoIsPlaying) {
-        // Stop playback
-        if (demoInterval) {
-          clearInterval(demoInterval);
-          demoInterval = null;
-        }
-        stopAudio();
-        demoIsPlaying = false;
-        
-        // Update button UI
-        playButton.innerHTML = `
-          <svg viewBox="0 0 24 24" width="24" height="24">
-            <path d="M8 5v14l11-7z" fill="currentColor"/>
-          </svg>
-          Play
-        `;
-      } else {
-        // Start playback
-        demoIsPlaying = true;
-        
-        // Update button UI
-        playButton.innerHTML = `
-          <svg viewBox="0 0 24 24" width="24" height="24">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
-          </svg>
-          Stop
-        `;
-        
-        // Reset if at end
-        if (demoPosition >= 100) {
-          demoPosition = 0;
-        }
-        
-        // Initialize audio context (this will handle autoplay policy issues)
-        initAudioContext();
-        
-        // Resume context if suspended (needed for Chrome's autoplay policy)
-        if (tutorialState.audioContext && tutorialState.audioContext.state === 'suspended') {
-          tutorialState.audioContext.resume().then(() => {
-            console.log('AudioContext resumed successfully');
-          });
-        }
-        
-        // Wait a moment for the context to resume
-        setTimeout(() => {
-          // Get initial value and frequency
-          const initialValue = getDataValueAtPosition(sampleData, demoPosition);
-          const initialFreq = mapValueToFrequency(initialValue);
-          
-          // Update timeline
-          if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
-          if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
-          
-          // Start audio
-          playAudio('sine', initialFreq);
-          
-          // Update position line in visualizations
-          updateAudioDemoPosition(sampleData, demoPosition);
-          
-          // Start playback interval
-          demoInterval = setInterval(() => {
-            demoPosition += 1;
-            
-            if (demoPosition > 100) {
-              clearInterval(demoInterval);
-              demoInterval = null;
-              stopAudio();
-              demoIsPlaying = false;
-              
-              // Update button UI
-              playButton.innerHTML = `
-                <svg viewBox="0 0 24 24" width="24" height="24">
-                  <path d="M8 5v14l11-7z" fill="currentColor"/>
-                </svg>
-                Play
-              `;
-              return;
-            }
-            
-            // Update timeline
-            if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
-            if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
-            
-            // Update audio and position line
-            updateAudioDemoPosition(sampleData, demoPosition);
-            
-          }, 100); // Update every 100ms
-        }, 200);
-      }
-    }
-    
-    // Add the click handler
-    playButton.addEventListener('click', handlePlayClick);
-    
-    // Set up timeline click
-    const timelineTrack = playButton.parentElement.querySelector('.audio-timeline');
-    if (timelineTrack) {
-      timelineTrack.addEventListener('click', function(e) {
-        // Calculate click position as percentage
-        const rect = this.getBoundingClientRect();
-        demoPosition = ((e.clientX - rect.left) / rect.width) * 100;
-        
-        // Update timeline
-        if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
-        if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
-        
-        // If playing, update audio and position line
-        if (demoIsPlaying) {
-          updateAudioDemoPosition(sampleData, demoPosition);
-        }
-      });
-    }
-    
-    // Function to update position line and audio
-    function updateAudioDemoPosition(data, position) {
-      // Get data value at position
-      const dataValue = getDataValueAtPosition(data, position);
-      
-      // Update audio frequency
-      if (tutorialState.isPlaying) {
-        const frequency = mapValueToFrequency(dataValue);
-        updateFrequency(frequency);
-      }
-      
-      // Update position line in chart
-      const positionLine = d3.select('#audiovisual-chart svg').select('#position-line');
-      if (!positionLine.empty()) {
-        const width = d3.select('#audiovisual-chart svg').attr('width');
-        const margin = { left: 40, right: 20 };
-        const x = margin.left + (position / 100) * (width - margin.left - margin.right);
-        positionLine.attr('x1', x).attr('x2', x);
-        
-        // Update highlight point
-        const highlightPoint = d3.select('#audiovisual-chart svg').select('#highlight-point');
-        if (!highlightPoint.empty()) {
-          // Calculate index
-          const index = Math.floor((position / 100) * (data.length - 1));
-          
-          // Get y coordinate
-          const height = d3.select('#audiovisual-chart svg').attr('height');
-          const margin = { top: 20, bottom: 30 };
-          const yScale = d3.scaleLinear()
-            .domain([d3.min(data, d => d.y) * 0.9, d3.max(data, d => d.y) * 1.1])
-            .range([height - margin.bottom, margin.top]);
-          
-          const yValue = data[index].y;
-          const y = yScale(yValue);
-          
-          // Update point
-          highlightPoint
-            .attr('cx', x)
-            .attr('cy', y)
-            .attr('opacity', 1);
-        }
-      }
-    }
-  }
-  
-  
-  /**
-   * Generate sample data with a subtle pattern that's hard to see but easy to hear
-   */
-  function generateSampleDataWithPattern() {
-    const data = [];
-    
-    // Generate 100 data points
-    for (let i = 0; i < 100; i++) {
-      // Base value with noise
-      let value = 50 + (Math.random() * 15 - 7.5);
-      
-      // Add subtle patterns that are hard to see visually
-      
-      // Pattern 1: Small sine wave
-      value += Math.sin(i * 0.2) * 3;
-      
-      // Pattern 2: Three subtle peaks
-      if (i > 25 && i < 35) {
-        value += (i - 25) * 0.5;
-      } else if (i > 35 && i < 45) {
-        value += (45 - i) * 0.5;
-      }
-      
-      if (i > 55 && i < 65) {
-        value += (i - 55) * 0.6;
-      } else if (i > 65 && i < 75) {
-        value += (75 - i) * 0.6;
-      }
-      
-      // Pattern 3: Hidden anomaly spike
-      if (i === 82) value += 8;
-      
-      data.push({ x: i, y: value });
-    }
-    
-    return data;
-  }
-  
-  /**
-   * Create a simple line chart using D3.js
-   */
-  function createSimpleLineChart(container, data, isInteractive) {
-    if (!d3 || !container) return;
-    
-    // Clear container
-    container.innerHTML = '';
-    
-    // Set dimensions
-    const width = container.clientWidth;
-    const height = container.clientHeight || 200;
-    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
-    
-    // Create SVG
-    const svg = d3.select(container)
-      .append('svg')
-      .attr('width', width)
-      .attr('height', height);
-    
-    // Create scales
-    const xScale = d3.scaleLinear()
-      .domain([0, data.length - 1])
-      .range([margin.left, width - margin.right]);
-    
-    const yScale = d3.scaleLinear()
-      .domain([d3.min(data, d => d.y) * 0.9, d3.max(data, d => d.y) * 1.1])
-      .range([height - margin.bottom, margin.top]);
-    
-    // Create line generator
-    const line = d3.line()
-      .x(d => xScale(d.x))
-      .y(d => yScale(d.y))
-      .curve(d3.curveMonotoneX);
-    
-    // Add the line path
-    svg.append('path')
-      .datum(data)
-      .attr('fill', 'none')
-      .attr('stroke', isInteractive ? '#1db954' : '#4a90e2')
-      .attr('stroke-width', 2)
-      .attr('d', line);
-    
-    // Add axes
-    const xAxis = d3.axisBottom(xScale).ticks(5);
-    const yAxis = d3.axisLeft(yScale).ticks(5);
-    
-    svg.append('g')
-      .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(xAxis)
-      .attr('color', '#666')
-      .selectAll('text')
-      .attr('fill', '#999');
-    
-    svg.append('g')
-      .attr('transform', `translate(${margin.left}, 0)`)
-      .call(yAxis)
-      .attr('color', '#666')
-      .selectAll('text')
-      .attr('fill', '#999');
-    
-    // If interactive, add vertical line to show current position
-    if (isInteractive) {
-      svg.append('line')
-        .attr('id', 'position-line')
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1)
-        .attr('stroke-dasharray', '3,3')
-        .attr('y1', margin.top)
-        .attr('y2', height - margin.bottom)
-        .attr('x1', margin.left)
-        .attr('x2', margin.left);
-      
-      // Add circles to highlight points
-      svg.append('circle')
-        .attr('id', 'highlight-point')
-        .attr('r', 4)
-        .attr('fill', '#1db954')
-        .attr('cx', xScale(0))
-        .attr('cy', yScale(data[0].y))
-        .attr('opacity', 0);
-    }
-  }
-  
-  /**
-   * Get data value at a specific position percentage
-   */
-  function getDataValueAtPosition(data, positionPercent) {
-    const index = Math.floor((positionPercent / 100) * (data.length - 1));
-    return data[Math.min(data.length - 1, Math.max(0, index))].y;
-  }
-  
-  /**
-   * Map data value to audio frequency
-   */
-  function mapValueToFrequency(value) {
-    // Map to a pleasant audio range (220-880 Hz)
-    return 220 + ((value - 30) / 60) * 660;
-  }
-  
-  /**
-   * Clean up resources when leaving Step 1
-   */
-  function cleanupStep1() {
-    stopAudio();
-  }
-  
-  // =================================================================
-  // STEP 2: Data Navigation
-  // =================================================================
-  
-  function initStep2() {
-    console.log('Initializing step 2');
-    
-    // Initialize dataset chart
-    initDatasetChart();
-    
-    // Set up subject buttons
-    const subjectButtons = document.querySelectorAll('.compare-subjects .demo-btn');
-    subjectButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        // Update active button
-        subjectButtons.forEach(btn => btn.classList.remove('active'));
-        this.classList.add('active');
-        
-        // Update chart with selected subject
-        const subject = this.dataset.subject;
-        console.log('Subject button clicked:', subject);
-        updateDatasetChart(subject);
-        
-        // Update dropdown if it exists
-        const subjectSelect = document.getElementById('subject-select');
-        if (subjectSelect) {
-          subjectSelect.value = subject;
-        }
-      });
-    });
-    
-    // Set up subject and metric dropdowns
-    const subjectSelect = document.getElementById('subject-select');
-    const metricSelect = document.getElementById('metric-select');
-    
-    if (subjectSelect) {
-      subjectSelect.addEventListener('change', function() {
-        const subject = this.value;
-        console.log('Subject dropdown changed:', subject);
-        updateDatasetChart(subject);
-        
-        // Also update active button
-        const subjectButtons = document.querySelectorAll('.compare-subjects .demo-btn');
-        subjectButtons.forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.subject === subject);
-        });
-      });
-    }
-    
-    if (metricSelect) {
-      metricSelect.addEventListener('change', function() {
-        const metric = this.value;
-        console.log('Metric dropdown changed:', metric);
-        // Update y-axis label and chart title
-        updateChartMetric(metric);
-      });
-    }
-  }
-  
-  /**
-   * Initialize the interactive dataset chart in step 2
-   */
-  function initDatasetChart() {
-    // Create the chart data if not already created
-    if (!tutorialState.chartData) {
-      tutorialState.chartData = generateExamDataset();
-    }
-    
-    const chartContainer = document.getElementById('dataset-chart');
-    if (!chartContainer) {
-      console.warn('Chart container not found');
-      return;
-    }
-    
-    // Get initial values
-    const subjectSelect = document.getElementById('subject-select');
-    const metricSelect = document.getElementById('metric-select');
-    
-    const initialSubject = subjectSelect ? subjectSelect.value : 'average';
-    const initialMetric = metricSelect ? metricSelect.value : 'hr';
-    
-    // Create chart
-    createDatasetChart(chartContainer, tutorialState.chartData, initialSubject, initialMetric);
-    
-    // Set up tooltip
-    const tooltip = document.getElementById('chart-tooltip');
-    
-    // Add interaction functionality
-    chartContainer.addEventListener('mousemove', handleChartMouseMove);
-    
-    // Function to handle mouse move on chart
-    function handleChartMouseMove(e) {
-      const rect = chartContainer.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      // Convert to chart coordinates
-      const xPercent = x / rect.width;
-      const timeValue = xPercent * 120; // 0-120 seconds exam time
-      
-      // Find closest data point
-      const subject = subjectSelect ? subjectSelect.value : 'average';
-      const metric = metricSelect ? metricSelect.value : 'hr';
-      
-      const subjectData = tutorialState.chartData[subject];
-      if (!subjectData) return;
-      
-      // Find closest data point
-      const closestPoint = findClosestDataPoint(subjectData, timeValue);
-      if (!closestPoint) return;
-      
-      // Move vertical line
-      const positionLine = document.getElementById('chart-position-line');
-      if (positionLine) {
-        positionLine.setAttribute('x1', x);
-        positionLine.setAttribute('x2', x);
-      }
-      
-      // Get Y coordinate
-      const yValue = closestPoint[metric];
-      if (tooltip && yValue !== undefined) {
-        // Position and show tooltip
-        tooltip.style.left = `${e.clientX + 10}px`;
-        tooltip.style.top = `${e.clientY - 30}px`;
-        tooltip.textContent = `Time: ${timeValue.toFixed(1)}s, ${getMetricDisplayName(metric)}: ${yValue.toFixed(1)}`;
-        tooltip.classList.remove('hidden');
-        
-        // Play sound if holding shift key
-        if (e.shiftKey && !tutorialState.isPlaying) {
-          const frequency = mapMetricToFrequency(yValue, metric);
-          playAudio('sine', frequency);
-        } else if (!e.shiftKey && tutorialState.isPlaying) {
-          stopAudio();
-        }
-      }
-    }
-    
-    // Hide tooltip on mouseout
-    chartContainer.addEventListener('mouseout', function() {
-      const tooltip = document.getElementById('chart-tooltip');
-      if (tooltip) {
-        tooltip.classList.add('hidden');
-      }
-      
-      // Stop any playing audio
-      if (tutorialState.isPlaying) {
-        stopAudio();
-      }
-    });
-    
-    // Add touch support for mobile
-    chartContainer.addEventListener('touchmove', handleChartTouchMove);
-    
-    // Function to handle touch move on chart
-    function handleChartTouchMove(e) {
-      const touch = e.touches[0];
-      const rect = chartContainer.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      
-      // Convert to chart coordinates
-      const xPercent = x / rect.width;
-      const timeValue = xPercent * 120; // 0-120 seconds exam time
-      
-      // Find closest data point
-      const subject = subjectSelect ? subjectSelect.value : 'average';
-      const metric = metricSelect ? metricSelect.value : 'hr';
-      
-      const subjectData = tutorialState.chartData[subject];
-      if (!subjectData) return;
-      
-      // Find closest data point
-      const closestPoint = findClosestDataPoint(subjectData, timeValue);
-      if (!closestPoint) return;
-      
-      // Move vertical line
-      const positionLine = document.getElementById('chart-position-line');
-      if (positionLine) {
-        positionLine.setAttribute('x1', x);
-        positionLine.setAttribute('x2', x);
-      }
-      
-      // Get Y coordinate for sound (automatically play sound on touch)
-      const yValue = closestPoint[metric];
-      if (yValue !== undefined) {
-        const frequency = mapMetricToFrequency(yValue, metric);
-        
-        if (!tutorialState.isPlaying) {
-          playAudio('sine', frequency);
-        } else {
-          updateFrequency(frequency);
-        }
-      }
-      
-      e.preventDefault(); // Prevent scroll
-    }
-    
-    chartContainer.addEventListener('touchend', function() {
-      // Stop any playing audio
-      if (tutorialState.isPlaying) {
-        stopAudio();
-      }
-    });
-  }
-
   /**
    * Create the dataset chart
+   * @param {HTMLElement} container - Container element for the chart
+   * @param {Object} data - Dataset containing subject data
+   * @param {string} subject - Current subject to display
+   * @param {string} metric - Current metric to display
    */
   function createDatasetChart(container, data, subject, metric) {
     if (!d3 || !container || !data) return;
@@ -1615,20 +661,33 @@ function initVisualAudioDemo() {
   }
   
   /**
-   * Toggle player playback
-   */
-  function togglePlayerPlayback() {
+ * Toggle player playback
+ */
+function togglePlayerPlayback() {
+    console.log("Toggle playback called, current state:", tutorialState.playerIsPlaying);
+    
     if (tutorialState.playerIsPlaying) {
       stopPlayerPlayback();
     } else {
       startPlayerPlayback();
     }
   }
-  
   /**
-   * Start player playback
-   */
-  function startPlayerPlayback() {
+ * Start player playback
+ */
+function startPlayerPlayback() {
+    console.log("Starting player playback");
+    
+    // Initialize audio context if needed
+    initAudioContext();
+    
+    // Resume context if suspended (needed for Chrome's autoplay policy)
+    if (tutorialState.audioContext && tutorialState.audioContext.state === 'suspended') {
+      tutorialState.audioContext.resume().then(() => {
+        console.log('AudioContext resumed successfully');
+      });
+    }
+    
     // Update UI
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
@@ -1648,46 +707,940 @@ function initVisualAudioDemo() {
       updatePlayerPosition(0);
     }
     
-    // Start audio
-    const waveformSelect = document.getElementById('waveform-select');
-    const waveType = waveformSelect ? waveformSelect.value : 'sine';
-    
-    // Get frequency based on current position
-    updatePlayerAudio(currentPosition);
-    
-    // Start playback interval
-    tutorialState.playerInterval = setInterval(() => {
-      // Get current position
-      let position = tutorialState.playerPosition;
+    // Start audio with a slight delay to ensure audioContext is ready
+    setTimeout(() => {
+      // Start audio
+      updatePlayerAudio(tutorialState.playerPosition || 0);
       
-      // Apply speed
-      position += 0.5 * (tutorialState.playbackSpeed || 1.0);
+      // Start playback interval
+      tutorialState.playerInterval = setInterval(() => {
+        // Get current position
+        let position = tutorialState.playerPosition || 0;
+        
+        // Apply speed
+        position += 0.5 * (tutorialState.playbackSpeed || 1.0);
+        
+        if (position >= 100) {
+          stopPlayerPlayback();
+          return;
+        }
+        
+        // Update position
+        updatePlayerPosition(position);
+        
+        // Update audio
+        updatePlayerAudio(position);
+        
+      }, 100); // Update 10 times per second
+    }, 200);
+  }
+  
+  
+  /**
+   * Initialize scrollama for step-based scrolling
+   */
+  function initScrollama() {
+    const scroller = scrollama();
+    
+    // Set up the steps
+    scroller
+      .setup({
+        step: '.tutorial-step',
+        offset: 0.5,
+        debug: false
+      })
+      .onStepEnter(response => {
+        // Get the step number
+        const stepNumber = parseInt(response.element.dataset.step);
+        
+        // Update progress bar
+        updateProgress(stepNumber);
+        
+        // Hide scroll prompt after first step
+        if (stepNumber > 1) {
+          const scrollPrompt = document.getElementById('scroll-prompt');
+          if (scrollPrompt) scrollPrompt.classList.add('hidden');
+        }
+        
+        // Mark step as active
+        response.element.classList.add('active');
+        
+        // Initialize specific step content
+        switch(stepNumber) {
+          case 1: initStep1(); break;
+          case 2: initStep2(); break;
+          case 3: initStep3(); break;
+          case 4: initStep4(); break;
+          case 5: initStep5(); break;
+        }
+      })
+      .onStepExit(response => {
+        // Clean up any active audio/animations when leaving a step
+        const stepNumber = parseInt(response.element.dataset.step);
+        
+        // Stop any audio playing in the section
+        if (tutorialState.isPlaying) {
+          stopAudio();
+        }
+        
+        // Clean up specific step resources
+        switch(stepNumber) {
+          case 1: cleanupStep1(); break;
+          case 2: cleanupStep2(); break;
+          case 3: cleanupStep3(); break;
+          case 4: cleanupStep4(); break;
+          case 5: cleanupStep5(); break;
+        }
+      });
       
-      if (position >= 100) {
-        stopPlayerPlayback();
-        return;
+    // After initialization, update to reflect current position
+    // This helps if the page is refreshed in the middle of the tutorial
+    scroller.resize();
+  }
+  
+  /**
+   * Update progress bar and step indicators
+   * @param {number} step - Current step number (1-based)
+   */
+  function updateProgress(step) {
+    // Update progress bar
+    const progressBar = document.getElementById('progress-bar');
+    if (progressBar) {
+      // Calculate percentage (5 steps total)
+      const progress = ((step - 1) / 4) * 100;
+      progressBar.style.width = `${progress}%`;
+    }
+    
+    // Update step indicators
+    const stepIndicators = document.querySelectorAll('.progress-step');
+    stepIndicators.forEach(indicator => {
+      const indicatorStep = parseInt(indicator.dataset.step);
+      indicator.classList.toggle('active', indicatorStep <= step);
+    });
+  }
+  
+  /**
+   * Initialize audio context for all audio functionality
+   */
+  function initAudioContext() {
+    if (tutorialState.audioContext) return;
+    
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      tutorialState.audioContext = new AudioContext();
+      
+      // Create main gain node
+      tutorialState.gainNode = tutorialState.audioContext.createGain();
+      tutorialState.gainNode.gain.value = 0.2; // 20% volume
+      tutorialState.gainNode.connect(tutorialState.audioContext.destination);
+      
+      console.log('Audio context initialized');
+    } catch (e) {
+      console.error('Failed to initialize audio context:', e);
+    }
+  }
+  
+  /**
+   * Start playing a simple oscillator
+   * @param {string} type - Oscillator type (sine, square, etc.)
+   * @param {number} frequency - Initial frequency in Hz
+   */
+  function playAudio(type, frequency) {
+    // Initialize audio context if needed
+    initAudioContext();
+    if (!tutorialState.audioContext) return;
+    
+    // Resume context if suspended (needed for Chrome's autoplay policy)
+    if (tutorialState.audioContext.state === 'suspended') {
+      tutorialState.audioContext.resume();
+    }
+    
+    // Stop any currently playing audio
+    stopAudio();
+    
+    try {
+      // Create new oscillator
+      tutorialState.oscillator = tutorialState.audioContext.createOscillator();
+      tutorialState.oscillator.type = type || 'sine';
+      tutorialState.oscillator.frequency.value = frequency || 440;
+      
+      // Connect and start
+      tutorialState.oscillator.connect(tutorialState.gainNode);
+      tutorialState.oscillator.start();
+      tutorialState.isPlaying = true;
+      tutorialState.currentWaveType = type;
+      
+      console.log(`Started ${type} wave at ${frequency}Hz`);
+    } catch (e) {
+      console.error('Error starting audio:', e);
+    }
+  }
+  
+  /**
+   * Stop currently playing audio
+   */
+  function stopAudio() {
+    if (!tutorialState.oscillator || !tutorialState.isPlaying) return;
+    
+    try {
+      tutorialState.oscillator.stop();
+      tutorialState.oscillator.disconnect();
+      tutorialState.oscillator = null;
+      tutorialState.isPlaying = false;
+      
+      console.log('Audio stopped');
+    } catch (e) {
+      console.error('Error stopping audio:', e);
+    }
+  }
+  
+  /**
+   * Update the frequency of currently playing audio
+   * @param {number} frequency - New frequency in Hz
+   */
+  function updateFrequency(frequency) {
+    if (!tutorialState.oscillator || !tutorialState.isPlaying) return;
+    
+    try {
+      // Use exponential ramp for smoother transition
+      const now = tutorialState.audioContext.currentTime;
+      tutorialState.oscillator.frequency.exponentialRampToValueAtTime(
+        Math.max(frequency, 1), // Ensure value is positive for exponentialRamp
+        now + 0.1
+      );
+    } catch (e) {
+      console.error('Error updating frequency:', e);
+    }
+  }
+  
+  /**
+   * Update volume level
+   * @param {number} level - Volume level from 0-1
+   */
+  function updateVolume(level) {
+    if (!tutorialState.gainNode) return;
+    
+    try {
+      // Clamp value between 0-1
+      const safeLevel = Math.max(0, Math.min(1, level));
+      
+      // Smooth transition
+      const now = tutorialState.audioContext.currentTime;
+      tutorialState.gainNode.gain.linearRampToValueAtTime(
+        safeLevel,
+        now + 0.1
+      );
+    } catch (e) {
+      console.error('Error updating volume:', e);
+    }
+  }
+  
+  // =================================================================
+  // STEP 1: Why Visualize Data with Sound?
+  // =================================================================
+  function initStep1() {
+    console.log('Initializing step 1');
+    
+    // Set up stress level slider
+    const stressSlider = document.getElementById('stress-slider');
+    if (stressSlider) {
+      stressSlider.addEventListener('input', updateStressVisualization);
+      // Initialize with default value
+      stressSlider.value = 20;
+      updateStressVisualization();
+    }
+    
+    // Set up play stress sound button
+    const playStressButton = document.getElementById('play-stress-sound');
+    if (playStressButton) {
+      playStressButton.addEventListener('click', function() {
+        if (tutorialState.isPlaying) {
+          stopAudio();
+          this.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M8 5v14l11-7z" fill="currentColor"/>
+            </svg>
+            Hear It
+          `;
+        } else {
+          // Get stress level and convert to frequency
+          const stressLevel = parseInt(document.getElementById('stress-slider').value);
+          const heartRate = 60 + (stressLevel * 0.6);
+          const frequency = 220 + ((heartRate - 60) / 120) * 440;
+          
+          // Choose waveform based on stress
+          let waveType = 'sine';
+          if (stressLevel > 70) {
+            waveType = 'sawtooth';
+          } else if (stressLevel > 30) {
+            waveType = 'triangle';
+          }
+          
+          playAudio(waveType, frequency);
+          this.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+            </svg>
+            Stop
+          `;
+        }
+      });
+    }
+    
+    // Also set up visual/audio demo
+    initVisualAudioDemo();
+  }
+  
+  function updateStressVisualization() {
+    const slider = document.getElementById('stress-slider');
+    if (!slider) return;
+    
+    const stressLevel = parseInt(slider.value);
+    
+    // Update heart rate based on stress (60-120 BPM range)
+    const heartRate = 60 + (stressLevel * 0.6);
+    const bpmValue = document.getElementById('bpm-value');
+    if (bpmValue) {
+      bpmValue.textContent = `${Math.round(heartRate)} BPM`;
+    }
+    
+    // Update waveform visualization
+    updateLiveWaveform(stressLevel);
+    
+    // Update heart animation speed
+    const heartIcon = document.getElementById('heart-animation');
+    if (heartIcon) {
+      // Adjust animation speed based on heart rate
+      const animationDuration = 60 / heartRate; // seconds per beat
+      heartIcon.style.animationDuration = `${animationDuration}s`;
+    }
+    
+    // If sound is currently playing, update its frequency
+    if (tutorialState.isPlaying && tutorialState.oscillator) {
+      const frequency = 220 + ((heartRate - 60) / 120) * 440;
+      updateFrequency(frequency);
+    }
+  }
+  
+  /**
+   * Update the live waveform visualization based on stress level
+   */
+  function updateLiveWaveform(stressLevel) {
+    const waveform = document.getElementById('live-waveform');
+    if (!waveform) return;
+    
+    // Clear existing bars
+    waveform.innerHTML = '';
+    
+    // Create new bars based on stress level
+    const barCount = 20;
+    
+    for (let i = 0; i < barCount; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'waveform-bar';
+      
+      // Calculate height based on stress level and position
+      let height;
+      
+      if (stressLevel < 30) {
+        // Low stress - smooth, regular pattern
+        height = 10 + Math.sin(i * 0.5) * 10;
+      } else if (stressLevel < 70) {
+        // Medium stress - more variation
+        height = 15 + Math.sin(i * 0.8) * 15 + (Math.random() * 5);
+      } else {
+        // High stress - jagged, irregular pattern
+        height = 20 + Math.sin(i * 1.2) * 20 + (Math.random() * 15);
       }
       
-      // Update position
-      updatePlayerPosition(position);
+      bar.style.height = `${height}px`;
       
-      // Update audio
-      updatePlayerAudio(position);
+      // Add varying animation delay for wave effect
+      bar.style.animationDelay = `${i * 0.05}s`;
       
-    }, 100); // Update 10 times per second
+      // Color based on stress
+      const hue = Math.max(120, 360 - stressLevel * 2.4); // Green to red
+      bar.style.backgroundColor = `hsl(${hue}, 80%, 50%)`;
+      
+      waveform.appendChild(bar);
+    }
   }
-
+  
   /**
- * Update player audio based on position
+   * Initialize the visual/audio demo in section 1
+   */
+  function initVisualAudioDemo() {
+    console.log('Initializing visual/audio demo');
+    
+    // Set up the SVG for the audio-visual demo
+    const visualChart = document.getElementById('visual-only-chart');
+    const audioVisualChart = document.getElementById('audiovisual-chart');
+    
+    if (!visualChart || !audioVisualChart) {
+      console.warn('Charts not found in DOM');
+      return;
+    }
+    
+    // Create a simple dataset with a hidden pattern
+    const sampleData = generateSampleDataWithPattern();
+    
+    // Create a simple line chart for both visualizations
+    createSimpleLineChart(visualChart, sampleData, false);
+    createSimpleLineChart(audioVisualChart, sampleData, true);
+    
+    // Set up play button for audio demo
+    const playButton = document.getElementById('play-audio-demo');
+    const timelineProgress = document.getElementById('audio-timeline-progress');
+    const timelineHandle = document.getElementById('audio-timeline-handle');
+    
+    if (!playButton) {
+      console.warn('Play button not found in DOM');
+      return;
+    }
+    
+    // Explicitly handle click events rather than relying on existing handlers
+    let demoIsPlaying = false;
+    let demoInterval = null;
+    let demoPosition = 0;
+    
+    // Remove any existing click handlers to avoid duplicates
+    playButton.removeEventListener('click', handlePlayClick);
+    
+    // Define the click handler
+    function handlePlayClick() {
+      console.log('Play button clicked, current state:', demoIsPlaying ? 'playing' : 'stopped');
+      
+      if (demoIsPlaying) {
+        // Stop playback
+        if (demoInterval) {
+          clearInterval(demoInterval);
+          demoInterval = null;
+        }
+        stopAudio();
+        demoIsPlaying = false;
+        
+        // Update button UI
+        playButton.innerHTML = `
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M8 5v14l11-7z" fill="currentColor"/>
+          </svg>
+          Play
+        `;
+      } else {
+        // Start playback
+        demoIsPlaying = true;
+        
+        // Update button UI
+        playButton.innerHTML = `
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+          </svg>
+          Stop
+        `;
+        
+        // Reset if at end
+        if (demoPosition >= 100) {
+          demoPosition = 0;
+        }
+        
+        // Initialize audio context (this will handle autoplay policy issues)
+        initAudioContext();
+        
+        // Resume context if suspended (needed for Chrome's autoplay policy)
+        if (tutorialState.audioContext && tutorialState.audioContext.state === 'suspended') {
+          tutorialState.audioContext.resume().then(() => {
+            console.log('AudioContext resumed successfully');
+          });
+        }
+        
+        // Wait a moment for the context to resume
+        setTimeout(() => {
+          // Get initial value and frequency
+          const initialValue = getDataValueAtPosition(sampleData, demoPosition);
+          const initialFreq = mapValueToFrequency(initialValue);
+          
+          // Update timeline
+          if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
+          if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
+          
+          // Start audio
+          playAudio('sine', initialFreq);
+          
+          // Update position line in visualizations
+          updateAudioDemoPosition(sampleData, demoPosition);
+          
+          // Start playback interval
+          demoInterval = setInterval(() => {
+            demoPosition += 1;
+            
+            if (demoPosition > 100) {
+              clearInterval(demoInterval);
+              demoInterval = null;
+              stopAudio();
+              demoIsPlaying = false;
+              
+              // Update button UI
+              playButton.innerHTML = `
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path d="M8 5v14l11-7z" fill="currentColor"/>
+                </svg>
+                Play
+              `;
+              return;
+            }
+            
+            // Update timeline
+            if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
+            if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
+            
+            // Update audio and position line
+            updateAudioDemoPosition(sampleData, demoPosition);
+            
+          }, 100); // Update every 100ms
+        }, 200);
+      }
+    }
+    
+    // Add the click handler
+    playButton.addEventListener('click', handlePlayClick);
+    
+    // Set up timeline click
+    const timelineTrack = document.querySelector('.audio-timeline');
+    if (timelineTrack) {
+      timelineTrack.addEventListener('click', function(e) {
+        // Calculate click position as percentage
+        const rect = this.getBoundingClientRect();
+        demoPosition = ((e.clientX - rect.left) / rect.width) * 100;
+        
+        // Update timeline
+        if (timelineProgress) timelineProgress.style.width = `${demoPosition}%`;
+        if (timelineHandle) timelineHandle.style.left = `${demoPosition}%`;
+        
+        // If playing, update audio and position line
+        if (demoIsPlaying) {
+          updateAudioDemoPosition(sampleData, demoPosition);
+        }
+      });
+    }
+    
+    // Function to update position line and audio
+    function updateAudioDemoPosition(data, position) {
+      // Get data value at position
+      const dataValue = getDataValueAtPosition(data, position);
+      
+      // Update audio frequency
+      if (tutorialState.isPlaying) {
+        const frequency = mapValueToFrequency(dataValue);
+        updateFrequency(frequency);
+      }
+      
+      // Update position line in chart
+      const positionLine = d3.select('#audiovisual-chart svg').select('#position-line');
+      if (!positionLine.empty()) {
+        const width = d3.select('#audiovisual-chart svg').attr('width');
+        const margin = { left: 40, right: 20 };
+        const x = margin.left + (position / 100) * (width - margin.left - margin.right);
+        positionLine.attr('x1', x).attr('x2', x);
+        
+        // Update highlight point
+        const highlightPoint = d3.select('#audiovisual-chart svg').select('#highlight-point');
+        if (!highlightPoint.empty()) {
+          // Calculate index
+          const index = Math.floor((position / 100) * (data.length - 1));
+          
+          // Get y coordinate
+          const height = d3.select('#audiovisual-chart svg').attr('height');
+          const margin = { top: 20, bottom: 30 };
+          const yScale = d3.scaleLinear()
+            .domain([d3.min(data, d => d.y) * 0.9, d3.max(data, d => d.y) * 1.1])
+            .range([height - margin.bottom, margin.top]);
+          
+          const yValue = data[index].y;
+          const y = yScale(yValue);
+          
+          // Update point
+          highlightPoint
+            .attr('cx', x)
+            .attr('cy', y)
+            .attr('opacity', 1);
+        }
+      }
+    }
+  }
+  
+  /**
+   * Generate sample data with a subtle pattern that's hard to see but easy to hear
+   */
+  function generateSampleDataWithPattern() {
+    const data = [];
+    
+    // Generate 100 data points
+    for (let i = 0; i < 100; i++) {
+      // Base value with noise
+      let value = 50 + (Math.random() * 15 - 7.5);
+      
+      // Add subtle patterns that are hard to see visually
+      
+      // Pattern 1: Small sine wave
+      value += Math.sin(i * 0.2) * 3;
+      
+      // Pattern 2: Three subtle peaks
+      if (i > 25 && i < 35) {
+        value += (i - 25) * 0.5;
+      } else if (i > 35 && i < 45) {
+        value += (45 - i) * 0.5;
+      }
+      
+      if (i > 55 && i < 65) {
+        value += (i - 55) * 0.6;
+      } else if (i > 65 && i < 75) {
+        value += (75 - i) * 0.6;
+      }
+      
+      // Pattern 3: Hidden anomaly spike
+      if (i === 82) value += 8;
+      
+      data.push({ x: i, y: value });
+    }
+    
+    return data;
+  }
+  
+  /**
+   * Create a simple line chart using D3.js
+   */
+  function createSimpleLineChart(container, data, isInteractive) {
+    if (!d3 || !container) return;
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Set dimensions
+    const width = container.clientWidth;
+    const height = container.clientHeight || 200;
+    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+    
+    // Create SVG
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height);
+    
+    // Create scales
+    const xScale = d3.scaleLinear()
+      .domain([0, data.length - 1])
+      .range([margin.left, width - margin.right]);
+    
+    const yScale = d3.scaleLinear()
+      .domain([d3.min(data, d => d.y) * 0.9, d3.max(data, d => d.y) * 1.1])
+      .range([height - margin.bottom, margin.top]);
+    
+    // Create line generator
+    const line = d3.line()
+      .x(d => xScale(d.x))
+      .y(d => yScale(d.y))
+      .curve(d3.curveMonotoneX);
+    
+    // Add the line path
+    svg.append('path')
+      .datum(data)
+      .attr('fill', 'none')
+      .attr('stroke', isInteractive ? '#1db954' : '#4a90e2')
+      .attr('stroke-width', 2)
+      .attr('d', line);
+    
+    // Add axes
+    const xAxis = d3.axisBottom(xScale).ticks(5);
+    const yAxis = d3.axisLeft(yScale).ticks(5);
+    
+    svg.append('g')
+      .attr('transform', `translate(0, ${height - margin.bottom})`)
+      .call(xAxis)
+      .attr('color', '#666')
+      .selectAll('text')
+      .attr('fill', '#999');
+    
+    svg.append('g')
+      .attr('transform', `translate(${margin.left}, 0)`)
+      .call(yAxis)
+      .attr('color', '#666')
+      .selectAll('text')
+      .attr('fill', '#999');
+    
+    // If interactive, add vertical line to show current position
+    if (isInteractive) {
+      svg.append('line')
+        .attr('id', 'position-line')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '3,3')
+        .attr('y1', margin.top)
+        .attr('y2', height - margin.bottom)
+        .attr('x1', margin.left)
+        .attr('x2', margin.left);
+      
+      // Add circles to highlight points
+      svg.append('circle')
+        .attr('id', 'highlight-point')
+        .attr('r', 4)
+        .attr('fill', '#1db954')
+        .attr('cx', xScale(0))
+        .attr('cy', yScale(data[0].y))
+        .attr('opacity', 0);
+    }
+  }
+  
+  /**
+   * Get data value at a specific position percentage
+   */
+  function getDataValueAtPosition(data, positionPercent) {
+    const index = Math.floor((positionPercent / 100) * (data.length - 1));
+    return data[Math.min(data.length - 1, Math.max(0, index))].y;
+  }
+  
+  /**
+   * Map data value to audio frequency
+   */
+  function mapValueToFrequency(value) {
+    // Map to a pleasant audio range (220-880 Hz)
+    return 220 + ((value - 30) / 60) * 660;
+  }
+  
+  /**
+   * Clean up resources when leaving Step 1
+   */
+  function cleanupStep1() {
+    stopAudio();
+  }
+  
+  // =================================================================
+  // STEP 2: Data Navigation
+  // =================================================================
+  
+  function initStep2() {
+    console.log('Initializing step 2');
+    
+    // Initialize dataset chart
+    initDatasetChart();
+    
+    // Set up subject buttons
+    const subjectButtons = document.querySelectorAll('.compare-subjects .demo-btn');
+    subjectButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // Update active button
+        subjectButtons.forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Update chart with selected subject
+        const subject = this.dataset.subject;
+        console.log('Subject button clicked:', subject);
+        updateDatasetChart(subject);
+        
+        // Update dropdown if it exists
+        const subjectSelect = document.getElementById('subject-select');
+        if (subjectSelect) {
+          subjectSelect.value = subject;
+        }
+      });
+    });
+    
+    // Set up subject and metric dropdowns
+    const subjectSelect = document.getElementById('subject-select');
+    const metricSelect = document.getElementById('metric-select');
+    
+    if (subjectSelect) {
+      subjectSelect.addEventListener('change', function() {
+        const subject = this.value;
+        console.log('Subject dropdown changed:', subject);
+        updateDatasetChart(subject);
+        
+        // Also update active button
+        const subjectButtons = document.querySelectorAll('.compare-subjects .demo-btn');
+        subjectButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.subject === subject);
+        });
+      });
+    }
+    
+    if (metricSelect) {
+      metricSelect.addEventListener('change', function() {
+        const metric = this.value;
+        console.log('Metric dropdown changed:', metric);
+        // Update y-axis label and chart title
+        updateChartMetric(metric);
+      });
+    }
+  }
+  
+  /**
+   * Initialize the interactive dataset chart in step 2
+   */
+  function initDatasetChart() {
+    // Create the chart data if not already created
+    if (!tutorialState.chartData) {
+      tutorialState.chartData = generateExamDataset();
+    }
+    
+    const chartContainer = document.getElementById('dataset-chart');
+    if (!chartContainer) {
+      console.warn('Chart container not found');
+      return;
+    }
+    
+    // Get initial values
+    const subjectSelect = document.getElementById('subject-select');
+    const metricSelect = document.getElementById('metric-select');
+    
+    const initialSubject = subjectSelect ? subjectSelect.value : 'average';
+    const initialMetric = metricSelect ? metricSelect.value : 'hr';
+    
+    // Create chart
+    createDatasetChart(chartContainer, tutorialState.chartData, initialSubject, initialMetric);
+    
+    // Set up tooltip
+    const tooltip = document.getElementById('chart-tooltip');
+    
+    // Add interaction functionality
+    chartContainer.addEventListener('mousemove', handleChartMouseMove);
+    
+    // Function to handle mouse move on chart
+    function handleChartMouseMove(e) {
+      const rect = chartContainer.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Convert to chart coordinates
+      const xPercent = x / rect.width;
+      const timeValue = xPercent * 120; // 0-120 seconds exam time
+      
+      // Find closest data point
+      const subject = subjectSelect ? subjectSelect.value : 'average';
+      const metric = metricSelect ? metricSelect.value : 'hr';
+      
+      const subjectData = tutorialState.chartData[subject];
+      if (!subjectData) return;
+      
+      // Find closest data point
+      const closestPoint = findClosestDataPoint(subjectData, timeValue);
+      if (!closestPoint) return;
+      
+      // Move vertical line
+      const positionLine = document.getElementById('chart-position-line');
+      if (positionLine) {
+        positionLine.setAttribute('x1', x);
+        positionLine.setAttribute('x2', x);
+      }
+      
+      // Get Y coordinate
+      const yValue = closestPoint[metric];
+      if (tooltip && yValue !== undefined) {
+        // Position and show tooltip
+        tooltip.style.left = `${e.clientX + 10}px`;
+        tooltip.style.top = `${e.clientY - 30}px`;
+        tooltip.textContent = `Time: ${timeValue.toFixed(1)}s, ${getMetricDisplayName(metric)}: ${yValue.toFixed(1)}`;
+        tooltip.classList.remove('hidden');
+        
+        // Play sound if holding shift key
+        if (e.shiftKey && !tutorialState.isPlaying) {
+          const frequency = mapMetricToFrequency(yValue, metric);
+          playAudio('sine', frequency);
+        } else if (!e.shiftKey && tutorialState.isPlaying) {
+          stopAudio();
+        }
+      }
+    }
+    
+    
+    // Hide tooltip on mouseout
+    chartContainer.addEventListener('mouseout', function() {
+      const tooltip = document.getElementById('chart-tooltip');
+      if (tooltip) {
+        tooltip.classList.add('hidden');
+      }
+      
+      // Stop any playing audio
+      if (tutorialState.isPlaying) {
+        stopAudio();
+      }
+    });
+    
+    // Add touch support for mobile
+    chartContainer.addEventListener('touchmove', handleChartTouchMove);
+    
+    // Function to handle touch move on chart
+    function handleChartTouchMove(e) {
+      const touch = e.touches[0];
+      const rect = chartContainer.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      
+      // Convert to chart coordinates
+      const xPercent = x / rect.width;
+      const timeValue = xPercent * 120; // 0-120 seconds exam time
+      
+      // Find closest data point
+      const subject = subjectSelect ? subjectSelect.value : 'average';
+      const metric = metricSelect ? metricSelect.value : 'hr';
+      
+      const subjectData = tutorialState.chartData[subject];
+      if (!subjectData) return;
+      
+      // Find closest data point
+      const closestPoint = findClosestDataPoint(subjectData, timeValue);
+      if (!closestPoint) return;
+      
+      // Move vertical line
+      const positionLine = document.getElementById('chart-position-line');
+      if (positionLine) {
+        positionLine.setAttribute('x1', x);
+        positionLine.setAttribute('x2', x);
+      }
+      
+      // Get Y coordinate for sound (automatically play sound on touch)
+      const yValue = closestPoint[metric];
+      if (yValue !== undefined) {
+        const frequency = mapMetricToFrequency(yValue, metric);
+        
+        if (!tutorialState.isPlaying) {
+          playAudio('sine', frequency);
+        } else {
+          updateFrequency(frequency);
+        }
+      }
+      
+      e.preventDefault(); // Prevent scroll
+    }
+    
+    chartContainer.addEventListener('touchend', function() {
+      // Stop any playing audio
+      if (tutorialState.isPlaying) {
+        stopAudio();
+      }
+    });
+}
+
+/**
+ * Update player audio based on position - Adding more logging
  */
 function updatePlayerAudio(position) {
-    if (!tutorialState.playerData) return;
+    console.log("Updating player audio at position:", position);
+    
+    if (!tutorialState.playerData) {
+      console.warn("No player data available");
+      return;
+    }
     
     // Get data value at position
     const timeValue = (position / 100) * 90; // 0-90 seconds range
     const dataPoint = findClosestDataPoint(tutorialState.playerData, timeValue);
     
-    if (!dataPoint) return;
+    if (!dataPoint) {
+      console.warn("No data point found at time:", timeValue);
+      return;
+    }
+    
+    console.log("Found data point:", dataPoint);
     
     // Get current waveform type
     const waveformSelect = document.getElementById('waveform-select');
@@ -1695,16 +1648,255 @@ function updatePlayerAudio(position) {
     
     // Calculate frequency based on heart rate
     const frequency = mapMetricToFrequency(dataPoint.hr, 'hr');
+    console.log("Using frequency:", frequency, "Hz for waveform type:", waveType);
     
     // Start or update audio
     if (!tutorialState.isPlaying) {
+      console.log("Starting new audio");
       playAudio(waveType, frequency);
     } else {
+      console.log("Updating frequency of existing audio");
       updateFrequency(frequency);
     }
     
     // Update visualizations
     updatePlayerVisualizations(position, dataPoint);
+  }
+  
+  /**
+   * Stop player playback
+   */
+  function stopPlayerPlayback() {
+    // Clear interval
+    if (tutorialState.playerInterval) {
+      clearInterval(tutorialState.playerInterval);
+      tutorialState.playerInterval = null;
+    }
+    
+    // Stop audio
+    stopAudio();
+    
+    // Update UI
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    if (playIcon && pauseIcon) {
+      playIcon.classList.remove('hidden');
+      pauseIcon.classList.add('hidden');
+    }
+    
+    // Update state
+    tutorialState.playerIsPlaying = false;
+    
+    // Update example button if exists
+    const examplePlayBtn = document.getElementById('example-play');
+    if (examplePlayBtn) {
+      examplePlayBtn.textContent = 'Try Example';
+    }
+  }
+  
+  /**
+   * Initialize step 4
+   */
+  function initStep4() {
+    console.log('Initializing step 4');
+    
+    // Set up waveform canvas
+    const canvas = document.getElementById('waveform-canvas');
+    if (canvas) {
+      setupWaveformCanvas(canvas);
+    }
+    
+    // Set up waveform card buttons
+    const playButtons = document.querySelectorAll('.play-wave-btn');
+    playButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const waveType = this.dataset.wave;
+        
+        if (tutorialState.isPlaying) {
+          stopAudio();
+          this.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M8 5v14l11-7z" fill="currentColor"/>
+            </svg>
+            Play
+          `;
+        } else {
+          playWaveform(waveType);
+          
+          // Update all buttons
+          playButtons.forEach(btn => {
+            btn.innerHTML = `
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path d="M8 5v14l11-7z" fill="currentColor"/>
+              </svg>
+              Play
+            `;
+          });
+          
+          // Update this button
+          this.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+            </svg>
+            Stop
+          `;
+        }
+      });
+    });
+  }
+  
+  /**
+   * Initialize step 5
+   */
+  function initStep5() {
+    console.log('Initializing step 5');
+    
+    // Set up browse button
+    const browseButton = document.getElementById('browse-files');
+    if (browseButton) {
+      browseButton.addEventListener('click', function() {
+        // In a real implementation, this would open a file dialog
+        // For the tutorial, we just simulate the experience
+        console.log('Browse button clicked');
+      });
+    }
+    
+    // Set up finish tutorial button
+    const finishButton = document.getElementById('finish-tutorial');
+    if (finishButton) {
+      finishButton.addEventListener('click', function() {
+        window.location.href = 'albums.html';
+      });
+    }
+  }
+  
+  /**
+   * Clean up resources when leaving Step 3
+   */
+  function cleanupStep3() {
+    // Stop any playing audio
+    if (tutorialState.isPlaying) {
+      stopAudio();
+    }
+    
+    // Stop player playback
+    if (tutorialState.playerIsPlaying) {
+      stopPlayerPlayback();
+    }
+  }
+  
+  /**
+   * Clean up resources when leaving Step 4
+   */
+  function cleanupStep4() {
+    // Stop any playing audio
+    if (tutorialState.isPlaying) {
+      stopAudio();
+    }
+  }
+  
+  /**
+   * Clean up resources when leaving Step 5
+   */
+  function cleanupStep5() {
+    // No cleanup needed
+  }
+  
+  /**
+   * Play a specific waveform type
+   */
+  function playWaveform(type) {
+    console.log("Playing waveform of type:", type);
+    
+    // Initialize audio context if needed
+    initAudioContext();
+    
+    // Resume context if suspended (needed for Chrome's autoplay policy)
+    if (tutorialState.audioContext && tutorialState.audioContext.state === 'suspended') {
+      tutorialState.audioContext.resume();
+    }
+    
+    // Stop any currently playing audio
+    if (tutorialState.isPlaying) {
+      stopAudio();
+    }
+    
+    // Small delay to ensure audio context is ready
+    setTimeout(() => {
+      // Play new audio
+      playAudio(type, 440);
+    }, 100);
+  }
+
+ /**
+ * Set up waveform canvas for drawing - Fixed mouse alignment
+ */
+function setupWaveformCanvas(canvas) {
+    console.log("Setting up waveform canvas for drawing");
+    
+    // Reset canvas - use clientWidth and clientHeight for proper sizing
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw center line
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+    
+    // Set up drawing state
+    tutorialState.isDrawing = false;
+    tutorialState.drawPath = [];
+    
+    // Clean up any existing event listeners to prevent duplicates
+    canvas.removeEventListener('mousedown', startDrawing);
+    canvas.removeEventListener('mousemove', draw);
+    canvas.removeEventListener('mouseup', stopDrawing);
+    canvas.removeEventListener('mouseout', stopDrawing);
+    canvas.removeEventListener('touchstart', handleTouchStart);
+    canvas.removeEventListener('touchmove', handleTouchMove);
+    canvas.removeEventListener('touchend', stopDrawing);
+    
+    // Set up event listeners
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    
+    // Touch support
+    canvas.addEventListener('touchstart', handleTouchStart);
+    canvas.addEventListener('touchmove', handleTouchMove);
+    canvas.addEventListener('touchend', stopDrawing);
+    
+    // These functions handle the start of drawing with touch
+    function handleTouchStart(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      // Call start drawing with correct coordinates
+      startDrawingWithCoords(x, y);
+    }
+    
+    // Handle touch move
+    function handleTouchMove(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      // Call draw with correct coordinates
+      drawWithCoords(x, y);
+    }
   }
   
   /**
@@ -1765,561 +1957,126 @@ function updatePlayerAudio(position) {
   }
   
   /**
-   * Stop player playback
+   * Start drawing with specific coordinates
    */
-  function stopPlayerPlayback() {
-    // Clear interval
-    if (tutorialState.playerInterval) {
-      clearInterval(tutorialState.playerInterval);
-      tutorialState.playerInterval = null;
-    }
+  function startDrawingWithCoords(x, y) {
+    const canvas = document.getElementById('waveform-canvas');
+    if (!canvas) return;
     
-    // Stop audio
-    stopAudio();
+    const ctx = canvas.getContext('2d');
     
-    // Update UI
-    const playIcon = document.getElementById('play-icon');
-    const pauseIcon = document.getElementById('pause-icon');
-    if (playIcon && pauseIcon) {
-      playIcon.classList.remove('hidden');
-      pauseIcon.classList.add('hidden');
-    }
+    // Update drawing state
+    tutorialState.isDrawing = true;
+    tutorialState.drawPath = [{x, y}];
     
-    // Update state
-    tutorialState.playerIsPlaying = false;
+    // Begin path
+    ctx.strokeStyle = '#1db954';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     
-    // Update example button if exists
-    const examplePlayBtn = document.getElementById('example-play');
-    if (examplePlayBtn) {
-      examplePlayBtn.textContent = 'Try Example';
-    }
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    
+    console.log('Drawing started at', x, y);
+  }
+  
+  /**
+   * Draw with specific coordinates
+   */
+  function drawWithCoords(x, y) {
+    if (!tutorialState.isDrawing) return;
+    
+    const canvas = document.getElementById('waveform-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Add point to path
+    tutorialState.drawPath.push({x, y});
+    
+    // Draw line
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+  
+  /**
+   * Start drawing on canvas
+   */
+  function startDrawing(e) {
+    const canvas = document.getElementById('waveform-canvas');
+    if (!canvas) return;
+    
+    // Get correct coordinates relative to canvas
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Start drawing with these coordinates
+    startDrawingWithCoords(x, y);
+  }
+  
+  /**
+   * Draw on canvas
+   */
+  function draw(e) {
+    if (!tutorialState.isDrawing) return;
+    
+    const canvas = document.getElementById('waveform-canvas');
+    if (!canvas) return;
+    
+    // Get correct coordinates relative to canvas
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Draw with these coordinates
+    drawWithCoords(x, y);
+  }
+  
+  /**
+   * Stop drawing
+   */
+  function stopDrawing() {
+    tutorialState.isDrawing = false;
   }
 
-  
-  // Skip player position by percentage
-  function skipPlayerPosition(percentage) {
-    const newPosition = Math.max(0, Math.min(100, tutorialState.playerPosition + percentage));
-    updatePlayerPosition(newPosition);
+  /**
+ * Update player position UI
+ */
+function updatePlayerPosition(position) {
+    console.log("Updating player position to:", position);
     
-    // Update audio if playing
-    if (tutorialState.playerIsPlaying) {
-      updatePlayerAudio(newPosition);
+    // Update state
+    tutorialState.playerPosition = position;
+    
+    // Update timeline
+    const timelineProgress = document.getElementById('player-timeline-progress');
+    const timelineHandle = document.getElementById('player-timeline-handle');
+    
+    if (timelineProgress) {
+      timelineProgress.style.width = `${position}%`;
+    }
+    
+    if (timelineHandle) {
+      timelineHandle.style.left = `${position}%`;
+    }
+    
+    // Update time display
+    const currentTime = document.getElementById('current-time');
+    const totalTime = document.getElementById('total-time');
+    
+    if (currentTime) {
+      // Convert position (0-100) to time in seconds (0-90)
+      const seconds = (position / 100) * 90;
+      currentTime.textContent = formatTime(seconds);
     }
   }
   
-  // Format time in seconds to MM:SS format
   function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
-  
-  // Update player visualizations
-  function updatePlayerVisualizations(position, dataPoint) {
-    // Update waveform bars
-    const waveformContainer = document.getElementById('player-waveform');
-    if (waveformContainer) {
-      const bars = waveformContainer.querySelectorAll('.waveform-bar');
-      bars.forEach((bar, index) => {
-        // Calculate height based on heart rate and position
-        const height = 5 + Math.abs(Math.sin(index * 0.2 + position * 0.05) * 20);
-        bar.style.height = `${height}px`;
-      });
-    }
-    
-    // Update pulse circle
-    const pulseCircle = document.getElementById('player-pulse-circle');
-    if (pulseCircle && dataPoint) {
-      // Scale circle based on heart rate
-      const size = 60 + (dataPoint.hr - 60) / 60 * 40;
-      pulseCircle.style.width = `${size}px`;
-      pulseCircle.style.height = `${size}px`;
-      
-      // Adjust animation speed
-      const animDuration = 60 / dataPoint.hr; // seconds per beat
-      pulseCircle.style.animationDuration = `${animDuration}s`;
-    }
-  }
-  
-  // Add missing step functions
-  function cleanupStep3() {
-    // Stop any playing audio
-    if (tutorialState.isPlaying) {
-      stopAudio();
-    }
-    
-    // Stop player playback
-    if (tutorialState.playerIsPlaying) {
-      stopPlayerPlayback();
-    }
-  }
-  
-  function initStep4() {
-    console.log('Initializing step 4');
-    
-    // Set up waveform canvas
-    const canvas = document.getElementById('waveform-canvas');
-    if (canvas) {
-      setupWaveformCanvas(canvas);
-    }
-    
-    // Set up waveform card buttons
-    const playButtons = document.querySelectorAll('.play-wave-btn');
-    playButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const waveType = this.dataset.wave;
-        
-        if (tutorialState.isPlaying) {
-          stopAudio();
-          this.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M8 5v14l11-7z" fill="currentColor"/>
-            </svg>
-            Play
-          `;
-        } else {
-          playWaveform(waveType);
-          
-          // Update all buttons
-          playButtons.forEach(btn => {
-            btn.innerHTML = `
-              <svg viewBox="0 0 24 24" width="16" height="16">
-                <path d="M8 5v14l11-7z" fill="currentColor"/>
-              </svg>
-              Play
-            `;
-          });
-          
-          // Update this button
-          this.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
-            </svg>
-            Stop
-          `;
-        }
-      });
-    });
-    
-    // Set up custom wave controls
-    const clearButton = document.getElementById('clear-canvas');
-    const smoothButton = document.getElementById('smooth-wave');
-    const playCustomButton = document.getElementById('play-custom-wave');
-    
-    if (clearButton) {
-      clearButton.addEventListener('click', clearWaveformCanvas);
-    }
-    
-    if (smoothButton) {
-      smoothButton.addEventListener('click', smoothWaveformPath);
-    }
-    
-    if (playCustomButton) {
-      playCustomButton.addEventListener('click', playCustomWaveform);
-    }
-  }
-  
-  function cleanupStep4() {
-    // Stop any playing audio
-    if (tutorialState.isPlaying) {
-      stopAudio();
-    }
-  }
-  
-  function initStep5() {
-    console.log('Initializing step 5');
-    
-    // Set up browse button
-    const browseButton = document.getElementById('browse-files');
-    if (browseButton) {
-      browseButton.addEventListener('click', function() {
-      });
-    }
-    
-    // Set up finish tutorial button
-    const finishButton = document.getElementById('finish-tutorial');
-    if (finishButton) {
-      finishButton.addEventListener('click', function() {
-        window.location.href = 'albums.html';
-      });
-    }
-  }
-  
-  function cleanupStep5() {
-    // No cleanup needed
-  }
-  
- /**
- * Set up waveform canvas for drawing
- */
-function setupWaveformCanvas(canvas) {
-  // Reset canvas
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#121212';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  // Draw center line
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, canvas.height / 2);
-  ctx.lineTo(canvas.width, canvas.height / 2);
-  ctx.stroke();
-  
-  // Set up drawing state
-  tutorialState.isDrawing = false;
-  tutorialState.drawPath = [];
-  
-  // Clean up any existing event listeners to prevent duplicates
-  canvas.removeEventListener('mousedown', startDrawing);
-  canvas.removeEventListener('mousemove', draw);
-  canvas.removeEventListener('mouseup', stopDrawing);
-  canvas.removeEventListener('mouseout', stopDrawing);
-  canvas.removeEventListener('touchstart', handleTouchStart);
-  canvas.removeEventListener('touchmove', handleTouchMove);
-  canvas.removeEventListener('touchend', stopDrawing);
-  
-  // Set up event listeners with proper event handling
-  canvas.addEventListener('mousedown', startDrawing);
-  canvas.addEventListener('mousemove', draw);
-  canvas.addEventListener('mouseup', stopDrawing);
-  canvas.addEventListener('mouseout', stopDrawing);
-  
-  // Touch support with proper handlers
-  canvas.addEventListener('touchstart', handleTouchStart);
-  canvas.addEventListener('touchmove', handleTouchMove);
-  canvas.addEventListener('touchend', stopDrawing);
-  
-  // Handler for touch start
-  function handleTouchStart(e) {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    
-    // Call start drawing with correct coordinates
-    startDrawingWithCoords(x, y);
-  }
-  
-  // Handler for touch move
-  function handleTouchMove(e) {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    
-    // Call draw with correct coordinates
-    drawWithCoords(x, y);
-  }
-}
-
-
-function startDrawing(e) {
- const canvas = document.getElementById('waveform-canvas');
- if (!canvas) return;
- 
- // Get correct coordinates relative to canvas
- const rect = canvas.getBoundingClientRect();
- const x = e.clientX - rect.left;
- const y = e.clientY - rect.top;
- 
- // Start drawing with these coordinates
- startDrawingWithCoords(x, y);
-}
-
-/**
-* Start drawing with specific coordinates
-*/
-function startDrawingWithCoords(x, y) {
- const canvas = document.getElementById('waveform-canvas');
- if (!canvas) return;
- 
- const ctx = canvas.getContext('2d');
- 
- // Update drawing state
- tutorialState.isDrawing = true;
- tutorialState.drawPath = [{x, y}];
- 
- // Begin path
- ctx.strokeStyle = '#1db954';
- ctx.lineWidth = 2;
- ctx.lineCap = 'round';
- ctx.lineJoin = 'round';
- 
- ctx.beginPath();
- ctx.moveTo(x, y);
- ctx.lineTo(x, y);
- ctx.stroke();
- 
- console.log('Drawing started at', x, y);
-}
-
-/**
-* Draw on canvas
-*/
-function draw(e) {
- if (!tutorialState.isDrawing) return;
- 
- const canvas = document.getElementById('waveform-canvas');
- if (!canvas) return;
- 
- // Get correct coordinates relative to canvas
- const rect = canvas.getBoundingClientRect();
- const x = e.clientX - rect.left;
- const y = e.clientY - rect.top;
- 
- // Draw with these coordinates
- drawWithCoords(x, y);
-}
-
-/**
-* Draw with specific coordinates
-*/
-function drawWithCoords(x, y) {
- if (!tutorialState.isDrawing) return;
- 
- const canvas = document.getElementById('waveform-canvas');
- if (!canvas) return;
- 
- const ctx = canvas.getContext('2d');
- 
- // Add point to path
- tutorialState.drawPath.push({x, y});
- 
- // Draw line
- ctx.lineTo(x, y);
- ctx.stroke();
-}
-
-/**
-* Stop drawing
-*/
-function stopDrawing() {
- tutorialState.isDrawing = false;
- console.log('Drawing stopped, path has', tutorialState.drawPath.length, 'points');
-}
-  
-  function clearWaveformCanvas() {
-    const canvas = document.getElementById('waveform-canvas');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Clear canvas
-    ctx.fillStyle = '#121212';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw center line
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.stroke();
-    
-    // Clear path
-    tutorialState.drawPath = [];
-  }
-  
-  function smoothWaveformPath() {
-    if (!tutorialState.drawPath || tutorialState.drawPath.length < 3) return;
-    
-    const canvas = document.getElementById('waveform-canvas');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Create a smoothed path using moving average
-    const smoothedPath = [];
-    const windowSize = 5;
-    
-    for (let i = 0; i < tutorialState.drawPath.length; i++) {
-      let sumX = 0;
-      let sumY = 0;
-      let count = 0;
-      
-      // Calculate window bounds
-      const start = Math.max(0, i - Math.floor(windowSize / 2));
-      const end = Math.min(tutorialState.drawPath.length - 1, i + Math.floor(windowSize / 2));
-      
-      // Sum points in window
-      for (let j = start; j <= end; j++) {
-        sumX += tutorialState.drawPath[j].x;
-        sumY += tutorialState.drawPath[j].y;
-        count++;
-      }
-      
-      // Calculate average
-      smoothedPath.push({
-        x: sumX / count,
-        y: sumY / count
-      });
-    }
-    
-    // Clear canvas
-    ctx.fillStyle = '#121212';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw center line
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.stroke();
-    
-    // Draw smoothed path
-    ctx.strokeStyle = '#1db954';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(smoothedPath[0].x, smoothedPath[0].y);
-    
-    for (let i = 1; i < smoothedPath.length; i++) {
-      ctx.lineTo(smoothedPath[i].x, smoothedPath[i].y);
-    }
-    
-    ctx.stroke();
-    
-    // Update path
-    tutorialState.drawPath = smoothedPath;
-  }
-  
-  function playWaveform(type) {
-    // Stop any currently playing audio
-    if (tutorialState.isPlaying) {
-      stopAudio();
-    }
-    
-    // Play new audio
-    playAudio(type, 440);
-  }
-  
-  function playCustomWaveform() {
-    if (!tutorialState.drawPath || tutorialState.drawPath.length < 2) {
-      alert('Please draw a waveform first');
-      return;
-    }
-    
-    // Stop any currently playing audio
-    if (tutorialState.isPlaying) {
-      stopAudio();
-    }
-    
-    // Use a custom oscillator with PeriodicWave
-    initAudioContext();
-    
-    try {
-      const samples = generateWaveformSamples();
-      if (samples) {
-        const wave = createPeriodicWave(samples);
-        
-        // Play with custom wave
-        tutorialState.oscillator = tutorialState.audioContext.createOscillator();
-        tutorialState.oscillator.setPeriodicWave(wave);
-        tutorialState.oscillator.frequency.value = 440;
-        
-        // Connect and start
-        tutorialState.oscillator.connect(tutorialState.gainNode);
-        tutorialState.oscillator.start();
-        tutorialState.isPlaying = true;
-        tutorialState.currentWaveType = 'custom';
-        
-        // Update button
-        const playCustomButton = document.getElementById('play-custom-wave');
-        if (playCustomButton) {
-          playCustomButton.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
-            </svg>
-            Stop
-          `;
-          
-          // Add click handler to stop
-          const originalClickHandler = playCustomButton.onclick;
-          playCustomButton.onclick = function() {
-            if (tutorialState.isPlaying) {
-              stopAudio();
-              this.innerHTML = `
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path d="M8 5v14l11-7z" fill="currentColor"/>
-                </svg>
-                Play Your Wave
-              `;
-              // Restore original click handler
-              this.onclick = originalClickHandler;
-            }
-          };
-        }
-      }
-    } catch (e) {
-      console.error('Error playing custom waveform:', e);
-    }
-  }
-  
-  function generateWaveformSamples() {
-    if (!tutorialState.drawPath || tutorialState.drawPath.length < 2) return null;
-    
-    const canvas = document.getElementById('waveform-canvas');
-    if (!canvas) return null;
-    
-    // Sort points by x coordinate
-    const sortedPath = [...tutorialState.drawPath].sort((a, b) => a.x - b.x);
-    
-    // Create 32 samples
-    const samples = new Float32Array(32);
-    const centerY = canvas.height / 2;
-    
-    for (let i = 0; i < 32; i++) {
-      // Calculate x position for this sample
-      const x = (i / 32) * canvas.width;
-      
-      // Find nearest points
-      let before = sortedPath[0];
-      let after = sortedPath[sortedPath.length - 1];
-      
-      for (let j = 0; j < sortedPath.length - 1; j++) {
-        if (sortedPath[j].x <= x && sortedPath[j + 1].x >= x) {
-          before = sortedPath[j];
-          after = sortedPath[j + 1];
-          break;
-        }
-      }
-      
-      // Interpolate y value
-      let y;
-      if (after.x === before.x) {
-        y = before.y;
-      } else {
-        const t = (x - before.x) / (after.x - before.x);
-        y = before.y + t * (after.y - before.y);
-      }
-      
-      // Convert to -1 to 1 range (y increases downward in canvas)
-      samples[i] = -((y - centerY) / centerY);
-    }
-    
-    return samples;
-  }
-  
-  function createPeriodicWave(samples) {
-    if (!tutorialState.audioContext) return null;
-    
-    // Create real and imaginary components
-    const real = new Float32Array(samples.length);
-    const imag = new Float32Array(samples.length);
-    
-    // Set DC component to 0
-    real[0] = 0;
-    imag[0] = 0;
-    
-    // Simple conversion from time domain to frequency domain
-    for (let n = 1; n < samples.length; n++) {
-      real[n] = samples[n];
-      imag[n] = 0;
-    }
-    
-    return tutorialState.audioContext.createPeriodicWave(real, imag);
-  }
-  

@@ -51,7 +51,7 @@
             <div class="tutorial-step" data-step="1">
                 <h1 class="step-title">Experience Your Data</h1>
                 <p class="step-description">
-                    Discover how sound transforms numbers into an immersive experience, revealing patterns your eyes might miss.
+                    Stress data is traditionally visualized through graphs and charts, <strong>and</strong> this allows us to see patterns over time. <strong>But</strong> our brains process audio differently from visual information, revealing subtle patterns we might otherwise miss. <strong>Therefore</strong>, by combining sound with visualization, we can create a deeper, more intuitive understanding of stress responses.
                 </p>
         
                 <!-- Interactive demo showing data visualized two ways -->
@@ -63,15 +63,22 @@
                     </div>
                     
                     <div class="demo-container">
-                        <h3>Using our ears...</h3>
+                        <h3>Visual + Audio</h3>
                         <div class="audiovisual-chart" id="audiovisual-chart"></div>
                         <div class="audio-controls">
                             <div class="audio-timeline">
                                 <div class="timeline-track"></div>
-                                <div class="timeline-progress" id="audio-timeline-progress"></div>
-                                <div class="timeline-handle" id="audio-timeline-handle"></div>
+                                <div class="audio-timeline-progress" id="audio-timeline-progress"></div>
+                                <div class="audio-timeline-handle" id="audio-timeline-handle"></div>
                             </div>
+                            <button id="play-audio-demo" class="play-btn">
+                                <svg viewBox="0 0 24 24" width="24" height="24">
+                                    <path d="M8 5v14l11-7z" fill="currentColor"/>
+                                </svg>
+                                Play
+                            </button>
                         </div>
+                        <p class="demo-caption">The hidden pattern is clearly audible!</p>
                     </div>
                 </div>
         
@@ -97,7 +104,36 @@
                         <p>Sound naturally maps to time, making it perfect for understanding how stress levels change and fluctuate over periods.</p>
                     </div>
                 </div>
-        
+                
+                <div class="try-it-yourself">
+                    <h3>Try It Yourself: Feel the Stress</h3>
+                    <p>Move the slider to adjust stress levels and experience how it sounds and looks in real-time.</p>
+                    
+                    <div class="interactive-controls">
+                        <div class="control-row">
+                            <span>Stress Level:</span>
+                            <input type="range" id="stress-slider" min="0" max="100" value="20" class="demo-slider">
+                        </div>
+                        
+                        <div class="stress-indicators">
+                            <div class="indicator">
+                                <div class="heart-icon" id="heart-animation"></div>
+                                <div id="bpm-value">72 BPM</div>
+                            </div>
+                            
+                            <div class="indicator">
+                                <div class="live-waveform" id="live-waveform"></div>
+                            </div>
+                            
+                            <button id="play-stress-sound" class="play-btn small">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M8 5v14l11-7z" fill="currentColor"/>
+                                </svg>
+                                Hear It
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -106,7 +142,9 @@
             <div class="tutorial-step" data-step="2">
                 <h2 class="step-title">Explore Your Data</h2>
                 <p class="step-description">
-                    Discover how Cognify helps you navigate complex datasets by combining interactive visualization and sonification.
+                    <strong>And</strong> stress data often contains complex patterns across different subjects and metrics.
+                    <strong>But</strong> traditional visualizations may not reveal the full emotional impact of stress.
+                    <strong>Therefore</strong>, Cognify helps you navigate these patterns by combining interactive visualization with sound, creating a more immersive experience.
                 </p>
 
                 <!-- Interactive dataset navigation -->
@@ -136,6 +174,14 @@
                         <div class="chart-tooltip hidden" id="chart-tooltip"></div>
                         
                         <div class="interaction-instructions">
+                            <div class="instruction-item">
+                                <span class="instruction-icon">🖱️</span>
+                                <span>Move mouse over chart</span>
+                            </div>
+                            <div class="instruction-item">
+                                <span class="instruction-icon">⇧</span>
+                                <span>Hold Shift to hear data</span>
+                            </div>
                         </div>
                     </div>
 
@@ -175,7 +221,9 @@
             <div class="tutorial-step" data-step="3">
                 <h2 class="step-title">Master the Audio Visualizer</h2>
                 <p class="step-description">
-                    Learn how to control and customize the audio experience to get deeper insights from your data.
+                    <strong>And</strong> our audio-visual player enhances your ability to experience stress data.
+                    <strong>But</strong> different situations call for different ways of exploring this information.
+                    <strong>Therefore</strong>, we've created intuitive controls that let you customize the experience to focus on what matters most to you.
                 </p>
 
                 <div class="player-container">
@@ -310,12 +358,14 @@
             </div>
         </section>
 
-       <!-- SECTION 4: Custom Waveforms -->
+        <!-- SECTION 4: Custom Waveforms -->
         <section class="tutorial-section" id="custom-waveforms">
             <div class="tutorial-step" data-step="4">
                 <h2 class="step-title">Create Your Own Waveforms</h2>
                 <p class="step-description">
-                    Different waveforms highlight different aspects of your data. Learn how they work and create your own.
+                    <strong>And</strong> different waveforms affect how we perceive stress patterns in audio.
+                    <strong>But</strong> everyone's perception is unique, and standard waveforms may not highlight what matters most to you.
+                    <strong>Therefore</strong>, we've created tools for you to design custom waveforms that emphasize exactly what you want to hear in your data.
                 </p>
 
                 <div class="waveform-guide">
@@ -394,7 +444,7 @@
                             <div class="tip-icon">💡</div>
                             <div class="tip-content">
                                 <h4>Create with Purpose</h4>
-                                <p>Design waveforms to highlight specific patterns you want to hear in your data. Sharp peaks can emphasize sudden changes while smoother curves capture gradual trends.</p>
+                                <p>Design waveforms to highlight specific patterns in your stress data. Sharp peaks can emphasize sudden changes while smoother curves capture gradual trends. Experiment to find what helps you intuitively understand your body's responses.</p>
                             </div>
                         </div>
                     </div>
@@ -407,7 +457,9 @@
             <div class="tutorial-step" data-step="5">
                 <h2 class="step-title">Upload Your Own Dataset</h2>
                 <p class="step-description">
-                    Learn how to prepare and upload your own biometric or stress data to Cognify.
+                    <strong>And</strong> we provide sample datasets to explore the stress visualization experience.
+                    <strong>But</strong> your own biometric data contains personal stress patterns unique to your life.
+                    <strong>Therefore</strong>, Cognify makes it easy to upload, configure, and explore your own stress data, creating a deeply personal understanding of your body's responses.
                 </p>
 
                 <div class="upload-workflow">
@@ -586,7 +638,7 @@
                         </svg>
                     </div>
                     <h2>You're Ready to Begin!</h2>
-                    <p>You've learned how to use Cognify to explore the hidden patterns in your stress data through sound and visualization.</p>
+                    <p>You've learned how to use Cognify to explore the hidden patterns in your stress data through sound and visualization. This multi-sensory approach offers a deeper, more intuitive connection to your body's responses than traditional charts alone.</p>
                     
                     <div class="next-steps">
                         <a href="albums.html" class="next-btn">
