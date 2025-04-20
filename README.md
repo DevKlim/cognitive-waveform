@@ -4,6 +4,7 @@
 
 > **Award**  
 > Winner of the **People's Choice Award** at UCSD's DSC106 Data Visualization Project Showcase
+>
 > Won Top 8 Best Projects at UCSD's DSC106 Data Visualization 
 ---
 
